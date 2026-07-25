@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=../../execution-manifest.schema.json
+manifest_schema_version: "1.0"
+manifest_id: YYYYMMDD-slice-key
+created_at: YYYY-MM-DDTHH:MM:SSZ
+created_by: human-or-agent
+status: proposed
+
+workspace:
+  project_name: quarry-kb
+  repo_path: /absolute/path/to/quarry-kb
+  repo_url: null
+  branch: cursor/example-branch
+  commit_sha: null
+
+task:
+  title: Short task title
+  objective: Goal of this hand-off (what must be accomplished)
+  mode: docs-only
+  sdd_profile: quarry-kb-fastapi-vue
+
+out_of_scope:
+  - Example excluded work item
+
+inputs:
+  source_references: []
+  documents:
+    - path: docs/03-spec/{slice}-spec.md
+      required: true
+      version: null
+    - path: docs/06-tasks/{slice}-tasks.md
+      required: true
+      version: null
+  adrs:
+    - path: docs/00-context/decisions/ADR-0001-adopt-context-engineering-adr-and-sdd-skills.md
+      required: false
+
+constraints:
+  allowed_paths:
+    - docs/
+    - frontend/
+    - backend/
+    - deploy/
+  forbidden_paths:
+    - .env
+    - secrets/
+    - data/
+    - uploads/
+  external_actions_require_approval: true
+  standards_refs:
+    - docs/standards/frontend.md
+    - docs/standards/backend.md
+
+outputs:
+  expected_artifacts:
+    - path: docs/00-context/changes/YYYYMMDD-slice-key/review.md
+      kind: markdown
+  completion_report:
+    include_changed_files: true
+    include_verification: true
+    include_risks: true
+
+verification:
+  commands:
+    - command: test -f docs/00-context/sdd-profile.md
+      required: true
+  quality_gates:
+    - docs_trace_to_spec
+    - freshness_gate_passed
+    - execution_manifest_schema_valid
+
+stop_conditions:
+  - required approved SDD input missing
+  - freshness-gate failed
+  - path outside constraints.allowed_paths requested
+  - secrets or real company documents would be committed

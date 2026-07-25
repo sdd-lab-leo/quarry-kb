@@ -7,10 +7,12 @@ This file provides guidance to coding agents when working with code in this repo
 Before non-trivial changes, read:
 
 - `PROJECT_RULES.md`
+- Recent lessons in `docs/lessons/inherited/` and `docs/lessons/observed/`
 - `docs/00-context/sdd-profile.md`
 - `docs/SDD-BOOTSTRAP.md` when generating or updating slice SDD
+- `docs/standards/frontend.md` and/or `docs/standards/backend.md` when touching that layer
+- `docs/00-context/handoff-playbook.md` before async / cross-session work
 - Relevant slice docs and ADRs
-- `docs/standards/*` when present (Step 2)
 
 ## Project Contract
 
@@ -39,7 +41,17 @@ This repository should be operated in strict Spec Driven Development mode for no
 - Treat SDD documents as the primary source of change intent and scope. Code, tests, and changelog entries must trace back to the SDD artifacts.
 - For small bug fixes, copy edits, or metadata-only cleanup, update the nearest existing SDD artifact only when behavior or scope changes.
 - Do not add a new user-facing feature as code-only work.
-- Before asynchronous agent work or cross-session implementation, create or reference an execution manifest validated against `docs/00-context/execution-manifest.schema.json`. Detailed hand-off playbook content arrives in a later step.
+
+## Hand-Off Gate
+
+Procedure: `docs/00-context/handoff-playbook.md`. Schema: `docs/00-context/execution-manifest.schema.json`. ADR: ADR-0003.
+
+- Do **not** start asynchronous or cross-session implementation without an execution manifest.
+- Do **not** hand off using chat history only for mandatory hand-off cases.
+- Run `freshness-gate` and record a pass before **apply**.
+- After **verify**, write `archive.md` and set manifest `status` to `archived`.
+- New pitfalls discovered at archive time go to `docs/lessons/observed/`.
+- Change packages use `docs/00-context/changes/YYYYMMDD-{slice-key}/` templates.
 
 ## Context Engineering And ADRs
 
@@ -66,7 +78,7 @@ This repository should be operated in strict Spec Driven Development mode for no
 
 ## Architecture Boundaries
 
-Intended layout (not yet scaffolded as a full application in Step 1):
+Intended layout (application code not scaffolded in Steps 1–2):
 
 - Backend API and domain logic live under `backend/`
 - Frontend Vue 3 application lives under `frontend/`
@@ -77,10 +89,10 @@ Intended layout (not yet scaffolded as a full application in Step 1):
 
 ## Coding Conventions
 
-Placeholder for Step 2.
+Do not fork a second convention system here. Follow:
 
-- Detailed language and framework conventions will live under `docs/standards/*` and will be referenced from this section once created.
-- Until those standards exist, prefer clear FastAPI + Vue 3 + TypeScript patterns consistent with ADR-0002 and do not invent a parallel convention system.
+- Frontend: `docs/standards/frontend.md` (Vue 3, Vite, TS, Pinia, Router; API modules; role guards; no password storage)
+- Backend: `docs/standards/backend.md` (api → services → repositories → adapters; Alembic; pluggable identity; upload metadata; OpenAI-compatible LLM adapter)
 
 ## Safety Rails
 
@@ -90,6 +102,8 @@ Placeholder for Step 2.
 - Commit real company documents, internal screenshots, secrets, or runtime logs
 - Commit uploaded knowledge corpora under `samples/` or elsewhere
 - Implement feature code without an approved SDD slice for non-trivial work
+- Start async / cross-session implementation without an execution manifest
+- Apply on a failed freshness-gate
 - Remove feature flags without searching all call sites
 - Commit without running the relevant verification commands once they exist
 
@@ -97,6 +111,7 @@ Placeholder for Step 2.
 
 - Update SDD artifacts before non-trivial or user-facing changes
 - Create or reference an execution manifest before async / cross-session implementation
+- Pass freshness-gate before apply; write archive after verify
 - Show diff before committing
 - Update changelog notes for user-facing changes once changelog practice is introduced
 
@@ -104,10 +119,11 @@ Placeholder for Step 2.
 
 Placeholder until scaffolding exists:
 
-- Backend changes: `cd backend && pytest`
+- Backend changes: `cd backend && pytest` (see `docs/standards/backend.md`)
 - API contract changes: update FastAPI tests and `docs/05-design/contracts/` guides
-- UI changes: `cd frontend && npm run build`
-- Schema/data model changes: keep migrations and SDD data-model docs aligned
+- UI changes: `cd frontend && npm run build` (see `docs/standards/frontend.md`)
+- Schema/data model changes: Alembic migration + SDD data-model docs aligned
+- Hand-off packages: manifest validates against `execution-manifest.schema.json`
 
 ## Compact Instructions
 

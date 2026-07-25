@@ -43,7 +43,7 @@ Use `review-code-against-design` only after implementation exists.
 
 - `PROJECT_RULES.md`
 - `AGENTS.md`
-- `docs/standards/*` when present (Step 2)
+- `docs/standards/frontend.md` / `docs/standards/backend.md` when the slice touches that layer
 - `docs/SDD-BOOTSTRAP.md`
 - `docs/00-context/sdd-profile.md`
 - Relevant existing slice docs

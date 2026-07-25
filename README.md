@@ -14,10 +14,14 @@ Quarry KB is greenfield. It does not fork WeKnora. Atlas Knowledge Hub is a diff
 
 | Document | Purpose |
 |---|---|
-| [AGENTS.md](AGENTS.md) | Agent contract: SDD gates, ADR rules, skills, intended build/test |
-| [PROJECT_RULES.md](PROJECT_RULES.md) | Hard rules for non-trivial vs trivial work and traceability |
+| [AGENTS.md](AGENTS.md) | Agent contract: SDD gates, hand-off gates, skills, intended build/test |
+| [PROJECT_RULES.md](PROJECT_RULES.md) | Hard rules for SDD, hand-off, product boundaries |
 | [docs/00-context/sdd-profile.md](docs/00-context/sdd-profile.md) | Active SDD profile (`quarry-kb-fastapi-vue`) |
 | [docs/SDD-BOOTSTRAP.md](docs/SDD-BOOTSTRAP.md) | Full-slice SDD generation entry (`wwa-sdd-generate-all`) |
+| [docs/standards/frontend.md](docs/standards/frontend.md) | Frontend development standards |
+| [docs/standards/backend.md](docs/standards/backend.md) | Backend development standards |
+| [docs/lessons/README.md](docs/lessons/README.md) | Lessons learnt process (inherited / observed) |
+| [docs/00-context/handoff-playbook.md](docs/00-context/handoff-playbook.md) | Execution-manifest hand-off procedure |
 | [docs/00-context/checklists/sdd-generation-gate.md](docs/00-context/checklists/sdd-generation-gate.md) | Skill-chain evidence checklist |
 | [docs/00-context/product-positioning.md](docs/00-context/product-positioning.md) | Product boundaries vs Atlas / WeKnora |
 | [docs/00-context/decisions/](docs/00-context/decisions/) | Architecture Decision Records |
@@ -40,7 +44,7 @@ Non-trivial or user-facing changes must update the SDD chain before implementati
 .agents/skills/          Canonical SDD / Agentic SDLC skills
 .claude/skills/          Claude Code mirror of skills
 .opencode/commands/      OpenCode /sdd router
-docs/00-context/         Durable context, profile, registry, ADRs
+docs/00-context/         Durable context, profile, registry, ADRs, hand-off
 docs/01-requirements/    Requirements slices
 docs/02-user-stories/    User stories
 docs/03-spec/            Specifications
@@ -49,6 +53,8 @@ docs/05-design/          Design + API contracts
 docs/06-tasks/           Implementation tasks
 docs/07-prompts/         Prompt notes
 docs/reviews/            Review reports
+docs/standards/          Frontend / backend development standards
+docs/lessons/            Inherited + observed lessons
 frontend/                Vue 3 app (placeholder)
 backend/                 FastAPI app (placeholder)
 deploy/                  Compose / deploy assets (placeholder)

@@ -52,16 +52,19 @@ Aligned to `deployment-agent@tool-page` skill set (including `wwa-sdd-generate-a
 
 ## Supporting Assets
 
-| Asset | Path | Purpose | Step 1 status |
+| Asset | Path | Purpose | Status |
 |---|---|---|---|
 | SDD profile | `docs/00-context/sdd-profile.md` | Active project SDD chain and gates | Present |
 | SDD bootstrap | `docs/SDD-BOOTSTRAP.md` | SDD generation entry guide (English-only) | Present |
 | SDD generation gate | `docs/00-context/checklists/sdd-generation-gate.md` | Skill-chain evidence checklist for SDD handoff | Present |
 | Project rules | `PROJECT_RULES.md` | Product/SDD/quality-gate operating rules | Present |
+| Frontend standards | `docs/standards/frontend.md` | Vue 3 / Vite / TS / Pinia conventions | Present |
+| Backend standards | `docs/standards/backend.md` | FastAPI layering, auth, uploads, LLM adapters | Present |
+| Lessons | `docs/lessons/` | Inherited + observed lessons with promotion rules | Present |
+| Hand-off playbook | `docs/00-context/handoff-playbook.md` | Multi-agent / multi-session hand-off procedure | Present |
+| Change templates | `docs/00-context/changes/_templates/` | proposal / manifest / review / archive | Present |
 | Execution manifest schema | `docs/00-context/execution-manifest.schema.json` | Machine-checkable manifest contract | Present |
 | OpenCode router | `.opencode/commands/sdd.md` | OpenCode entry point for skill routing | Present |
-| Development standards | `docs/standards/*` | Engineering standards by layer | Deferred (Step 2) |
-| Agent handoff playbook | (Step 2) | Cross-session hand-off narrative | Deferred |
 | Discipline profile | `docs/00-context/agent-discipline-profile.md` | AI behavior vs programmatic gate policy | Deferred |
 | Doctor script | `scripts/agentic-sdlc-doctor.sh` | Local/global health check | Deferred |
 | Sync script | `scripts/sync-global-agent-assets.sh` | Push canonical skills to global locations | Deferred |
