@@ -2,7 +2,17 @@
 
 This file provides guidance to coding agents when working with code in this repository.
 
-# Project Contract
+## Required Reading
+
+Before non-trivial changes, read:
+
+- `PROJECT_RULES.md`
+- `docs/00-context/sdd-profile.md`
+- `docs/SDD-BOOTSTRAP.md` when generating or updating slice SDD
+- Relevant slice docs and ADRs
+- `docs/standards/*` when present (Step 2)
+
+## Project Contract
 
 ## Build And Test
 
@@ -22,6 +32,8 @@ This repository should be operated in strict Spec Driven Development mode for no
 
 - The active project profile is `docs/00-context/sdd-profile.md` (`quarry-kb-fastapi-vue`).
 - Before implementation, create or update the relevant SDD artifacts under `docs/01-requirements`, `docs/02-user-stories`, `docs/03-spec`, `docs/04-architecture`, `docs/05-design`, and `docs/06-tasks`.
+- For full SDD generation, use `wwa-sdd-generate-all` (see `docs/SDD-BOOTSTRAP.md`) and report skill-chain evidence per `docs/00-context/checklists/sdd-generation-gate.md`.
+- SDD and project-rule documents are English-only.
 - Non-trivial or user-facing changes must update SDD first. Do not implement feature code without an approved slice.
 - If a change has already been implemented without SDD artifacts, backfill the full SDD chain immediately and mark the documents as `Backfilled` rather than pretending they preceded the code.
 - Treat SDD documents as the primary source of change intent and scope. Code, tests, and changelog entries must trace back to the SDD artifacts.
@@ -42,7 +54,7 @@ This repository should be operated in strict Spec Driven Development mode for no
 
 - Treat `.agents/skills/` as the canonical project-local source for reusable SDD and Agentic SDLC workflows.
 - Use `sdd-profile-manager` before applying SDD to a new project shape.
-- Use `sdd-slice-bootstrap` when starting or auditing a feature slice.
+- Use `wwa-sdd-generate-all` for full slice SDD generation; use `sdd-slice-bootstrap` when auditing an existing skeleton.
 - Use `execution-manifest` before handing work to a coding agent, remote agent, or automation.
 - Use `freshness-gate` before approving, implementing, or releasing from potentially stale docs/code/tests.
 - Use `cross-ide-skill-router` when keeping Codex, Claude Code, OpenCode, Gemini, or another tool aligned on the same workflow source.

@@ -12,6 +12,8 @@ Accepted
 
 This registry tracks the reusable Agentic SDLC assets installed globally or bridged locally across Codex, shared OpenAI-style agents, Claude Code, OpenCode, and GitHub Copilot for Quarry KB.
 
+Aligned to `deployment-agent@tool-page` skill set (including `wwa-sdd-generate-all`).
+
 ## Global Installation Targets
 
 | Tool | Path | Status |
@@ -42,6 +44,7 @@ This registry tracks the reusable Agentic SDLC assets installed globally or brid
 | `review-docs-against-code` | 0.1.0 | `.agents/skills/review-docs-against-code/` | Review documentation against actual code |
 | `sdd-profile-manager` | 0.1.0 | `.agents/skills/sdd-profile-manager/` | Define or choose project SDD profiles |
 | `sdd-slice-bootstrap` | 0.1.0 | `.agents/skills/sdd-slice-bootstrap/` | Create or audit complete SDD slice document sets |
+| `wwa-sdd-generate-all` | 0.1.1 | `.agents/skills/wwa-sdd-generate-all/` | Orchestrate full English SDD generation via the project skill chain |
 | `spec-to-architecture` | 0.1.0 | `.agents/skills/spec-to-architecture/` | Convert specifications into architecture |
 | `tasks-to-code` | 0.1.0 | `.agents/skills/tasks-to-code/` | Convert task breakdowns into code-oriented implementation guidance |
 | `tasks-to-implementation` | 0.1.0 | `.agents/skills/tasks-to-implementation/` | Implement from structured tasks |
@@ -52,8 +55,13 @@ This registry tracks the reusable Agentic SDLC assets installed globally or brid
 | Asset | Path | Purpose | Step 1 status |
 |---|---|---|---|
 | SDD profile | `docs/00-context/sdd-profile.md` | Active project SDD chain and gates | Present |
+| SDD bootstrap | `docs/SDD-BOOTSTRAP.md` | SDD generation entry guide (English-only) | Present |
+| SDD generation gate | `docs/00-context/checklists/sdd-generation-gate.md` | Skill-chain evidence checklist for SDD handoff | Present |
+| Project rules | `PROJECT_RULES.md` | Product/SDD/quality-gate operating rules | Present |
 | Execution manifest schema | `docs/00-context/execution-manifest.schema.json` | Machine-checkable manifest contract | Present |
 | OpenCode router | `.opencode/commands/sdd.md` | OpenCode entry point for skill routing | Present |
+| Development standards | `docs/standards/*` | Engineering standards by layer | Deferred (Step 2) |
+| Agent handoff playbook | (Step 2) | Cross-session hand-off narrative | Deferred |
 | Discipline profile | `docs/00-context/agent-discipline-profile.md` | AI behavior vs programmatic gate policy | Deferred |
 | Doctor script | `scripts/agentic-sdlc-doctor.sh` | Local/global health check | Deferred |
 | Sync script | `scripts/sync-global-agent-assets.sh` | Push canonical skills to global locations | Deferred |

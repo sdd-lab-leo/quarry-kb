@@ -38,13 +38,17 @@ Choose the matching skill based on the user's requested stage:
 | review docs against code | `review-docs-against-code` |
 | context engineering or ADRs | `context-engineering-adr` |
 | choose or define SDD profile | `sdd-profile-manager` |
+| generate full slice SDD | `wwa-sdd-generate-all` |
 | bootstrap a new SDD slice | `sdd-slice-bootstrap` |
+| audit an existing SDD skeleton | `sdd-slice-bootstrap` |
 | prepare pinned agent handoff | `execution-manifest` |
 | check stale docs/code/tests | `freshness-gate` |
 | route skills across IDEs | `cross-ide-skill-router` |
 | doctor or health check | `agentic-sdlc-doctor` |
 
 For `/sdd propose`, `/sdd apply`, `/sdd verify`, and `/sdd archive`, route through `agentic-sdlc-orchestrator` first. It may delegate to the narrower skills.
+
+For full slice SDD generation (`/sdd generate …`, “一键生成 SDD”), route through `wwa-sdd-generate-all` and follow `docs/SDD-BOOTSTRAP.md`.
 
 ## Required Behavior
 

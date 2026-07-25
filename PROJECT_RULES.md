@@ -38,8 +38,14 @@ This Step 1 skeleton covers SDD discipline only. Coding standards, lessons, and 
 
 ## Document Chain Integrity
 
-- Use the `docs/00-context` → `docs/06-tasks` (+ reviews) chain defined by `docs/00-context/sdd-profile.md`.
+- Use the document chain in `docs/00-context/sdd-profile.md` (orders 0–13, including bootstrap and traceability).
+- For full slice SDD generation, start from `wwa-sdd-generate-all` via `docs/SDD-BOOTSTRAP.md` and pass `docs/00-context/checklists/sdd-generation-gate.md`.
 - Do not invent a parallel `docs/sdd/` single-file template system that replaces the `00`–`06` chain.
+
+## Language
+
+- Project rules and SDD documents are English-only.
+- Do not create `.zh-CN.md` companions for SDD unless explicitly requested.
 
 ## Execution Manifest Gate
 
