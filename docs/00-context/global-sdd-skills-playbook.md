@@ -25,6 +25,7 @@ Keep one portable SDD workflow library available globally so projects can reuse 
 | `context-engineering-adr` | Capture durable context and architecture decisions |
 | `sdd-profile-manager` | Define or choose the right SDD profile for a project |
 | `sdd-slice-bootstrap` | Create or audit a complete SDD slice document set |
+| `wwa-sdd-generate-all` | Orchestrate full English SDD generation via the project skill chain |
 | `execution-manifest` | Pin agent handoff context, inputs, outputs, constraints, and verification |
 | `freshness-gate` | Check whether docs, code, tests, or approvals are stale |
 | `cross-ide-skill-router` | Expose the same skill library across Codex, Claude Code, OpenCode, and similar tools |
@@ -81,7 +82,7 @@ repo=/path/to/quarry-kb
 for dest in ~/.codex/skills ~/.agents/skills ~/.claude/skills ~/.config/opencode/skills; do
   mkdir -p "$dest"
   cp -R "$repo/.agents/skills/_shared" "$dest/"
-  cp -R "$repo/.agents/skills"/{agentic-sdlc-doctor,agentic-sdlc-orchestrator,architecture-to-design,context-engineering-adr,cross-ide-skill-router,design-to-tasks,execution-manifest,freshness-gate,req-to-user-story,review-code-against-design,review-doc-quality,review-docs-against-code,sdd-profile-manager,sdd-slice-bootstrap,spec-to-architecture,tasks-to-code,tasks-to-implementation,user-story-to-spec} "$dest/"
+  cp -R "$repo/.agents/skills"/{agentic-sdlc-doctor,agentic-sdlc-orchestrator,architecture-to-design,context-engineering-adr,cross-ide-skill-router,design-to-tasks,execution-manifest,freshness-gate,req-to-user-story,review-code-against-design,review-doc-quality,review-docs-against-code,sdd-profile-manager,sdd-slice-bootstrap,spec-to-architecture,tasks-to-code,tasks-to-implementation,user-story-to-spec,wwa-sdd-generate-all} "$dest/"
 done
 mkdir -p ~/.config/opencode/commands
 cp "$repo/.opencode/commands/sdd.md" ~/.config/opencode/commands/sdd.md
@@ -104,19 +105,22 @@ cp "$repo/.opencode/commands/sdd.md" ~/.config/opencode/commands/sdd.md
 |---|---|---|---|
 | Registry | `docs/00-context/agentic-sdlc-registry.md` | Skill versions, sources, sync targets, and supporting assets | Present |
 | Execution manifest schema | `docs/00-context/execution-manifest.schema.json` | Machine-checkable execution manifest contract | Present |
+| SDD bootstrap | `docs/SDD-BOOTSTRAP.md` | Full-slice SDD generation entry | Present |
+| SDD generation gate | `docs/00-context/checklists/sdd-generation-gate.md` | Skill-chain evidence checklist | Present |
 | CI template | `.github/workflows/agentic-sdlc.yml` | Doctor, secret scan, backend test, and frontend build | Deferred |
 | GitHub Copilot bridge | `.github/copilot-instructions.md` | Repository-wide Copilot route into Agentic SDLC | Deferred |
 | GitHub Copilot Agentic SDLC instructions | `.github/instructions/agentic-sdlc.instructions.md` | Path-specific and agent Copilot route into shared skills | Deferred |
 
 ## Current Global Batch
 
-The current global batch contains 18 skills: the original 11 SDD skills, 5 Agentic SDLC primitives, and 2 control-plane utilities:
+The current global batch contains 19 skills: the original 11 SDD skills, 5 Agentic SDLC primitives, 2 control-plane utilities, and the full-slice orchestrator:
 
 - `agentic-sdlc-orchestrator`
 - `agentic-sdlc-doctor`
 
 - `sdd-profile-manager`
 - `sdd-slice-bootstrap`
+- `wwa-sdd-generate-all`
 - `execution-manifest`
 - `freshness-gate`
 - `cross-ide-skill-router`

@@ -17,6 +17,8 @@ Quarry KB is greenfield. It does not fork WeKnora. Atlas Knowledge Hub is a diff
 | [AGENTS.md](AGENTS.md) | Agent contract: SDD gates, ADR rules, skills, intended build/test |
 | [PROJECT_RULES.md](PROJECT_RULES.md) | Hard rules for non-trivial vs trivial work and traceability |
 | [docs/00-context/sdd-profile.md](docs/00-context/sdd-profile.md) | Active SDD profile (`quarry-kb-fastapi-vue`) |
+| [docs/SDD-BOOTSTRAP.md](docs/SDD-BOOTSTRAP.md) | Full-slice SDD generation entry (`wwa-sdd-generate-all`) |
+| [docs/00-context/checklists/sdd-generation-gate.md](docs/00-context/checklists/sdd-generation-gate.md) | Skill-chain evidence checklist |
 | [docs/00-context/product-positioning.md](docs/00-context/product-positioning.md) | Product boundaries vs Atlas / WeKnora |
 | [docs/00-context/decisions/](docs/00-context/decisions/) | Architecture Decision Records |
 
