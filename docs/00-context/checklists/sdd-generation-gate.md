@@ -15,7 +15,7 @@ The agent completion report must include:
   - `architecture-to-design`
   - `design-to-tasks`
   - `review-doc-quality`
-- Architecture-review / ADR result or explicit `not applicable`
+- ADR created/updated or explicit `not applicable` (no `architecture-review` skill in this repo)
 - `review-doc-quality` result or explicit blocked reason
 
 ## Gate Checklist

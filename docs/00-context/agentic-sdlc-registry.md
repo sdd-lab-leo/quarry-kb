@@ -44,7 +44,7 @@ Aligned to `deployment-agent@tool-page` skill set (including `wwa-sdd-generate-a
 | `review-docs-against-code` | 0.1.0 | `.agents/skills/review-docs-against-code/` | Review documentation against actual code |
 | `sdd-profile-manager` | 0.1.0 | `.agents/skills/sdd-profile-manager/` | Define or choose project SDD profiles |
 | `sdd-slice-bootstrap` | 0.1.0 | `.agents/skills/sdd-slice-bootstrap/` | Create or audit complete SDD slice document sets |
-| `wwa-sdd-generate-all` | 0.1.1 | `.agents/skills/wwa-sdd-generate-all/` | Orchestrate full English SDD generation via the project skill chain |
+| `wwa-sdd-generate-all` | 0.2.0 | `.agents/skills/wwa-sdd-generate-all/` | Orchestrate full English Quarry KB SDD generation via the project skill chain (directory name retained for isomorphism) |
 | `spec-to-architecture` | 0.1.0 | `.agents/skills/spec-to-architecture/` | Convert specifications into architecture |
 | `tasks-to-code` | 0.1.0 | `.agents/skills/tasks-to-code/` | Convert task breakdowns into code-oriented implementation guidance |
 | `tasks-to-implementation` | 0.1.0 | `.agents/skills/tasks-to-implementation/` | Implement from structured tasks |
