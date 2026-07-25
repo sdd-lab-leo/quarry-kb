@@ -35,7 +35,7 @@ Note: the skill directory name `wwa-sdd-generate-all` is kept for isomorphism wi
 | 6 | `design-to-tasks` | Design → implementation tasks |
 | 7 | `review-doc-quality` | Completeness and traceability review |
 
-Use architecture review (or an ADR) when architecture, API, persistence, security, auth/roles, retrieval boundaries, or data ownership change materially.
+Use an ADR (and ensure `review-doc-quality` covers it) when architecture, API, persistence, security, auth/roles, retrieval boundaries, or data ownership change materially. This repository has no `architecture-review` skill.
 
 Use `review-code-against-design` only after implementation exists.
 
@@ -48,7 +48,7 @@ Use `review-code-against-design` only after implementation exists.
 - `docs/00-context/sdd-profile.md`
 - Relevant existing slice docs
 - Relevant ADRs
-- Prototype or FE baseline when UI is in scope
+- UI baseline when UI is in scope (only if such artifacts exist)
 
 ## Recommended Slice Goal Shape
 
@@ -56,7 +56,7 @@ Use `review-code-against-design` only after implementation exists.
 Goal: <user-facing outcome>
 Slice: <stable kebab-case slug>
 Scope: <included and excluded behavior>
-Sources: <SDD / prototype / ADR references>
+Sources: <SDD / UI baseline if present / ADR references>
 Acceptance: <observable completion criteria>
 Verification: <commands, checks, manual review>
 Constraints: <security, auth/roles, data-safety, upload/knowledge boundaries>

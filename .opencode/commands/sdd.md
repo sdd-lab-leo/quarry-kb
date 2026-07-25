@@ -48,7 +48,7 @@ Choose the matching skill based on the user's requested stage:
 
 For `/sdd propose`, `/sdd apply`, `/sdd verify`, and `/sdd archive`, route through `agentic-sdlc-orchestrator` first. It may delegate to the narrower skills.
 
-For full slice SDD generation (`/sdd generate …`, “一键生成 SDD”), route through `wwa-sdd-generate-all` and follow `docs/SDD-BOOTSTRAP.md`.
+For full slice SDD generation (`/sdd generate …`, "generate SDD in one pass"), route through `wwa-sdd-generate-all` and follow `docs/SDD-BOOTSTRAP.md`.
 
 ## Required Behavior
 

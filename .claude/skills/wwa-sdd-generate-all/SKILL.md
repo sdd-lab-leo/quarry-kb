@@ -1,15 +1,18 @@
 ---
 name: wwa-sdd-generate-all
 description: >
-  WWA Agent Hub project-specific SDD orchestration skill. Use when the user asks to generate all
-  SDD documents for a WWA slice, bootstrap a feature slice, or prepare implementation-ready
-  documentation. Produces the full English WWA SDD set using PROJECT_RULES, DEVELOPMENT_STANDARDS,
-  SDD-BOOTSTRAP, and project-local SDD skills.
+  Quarry KB project-local SDD orchestration skill. Use when the user asks to generate all
+  SDD documents for a Quarry KB slice, bootstrap a feature slice, or prepare implementation-ready
+  documentation. Produces the full English Quarry KB SDD set using PROJECT_RULES,
+  docs/standards/frontend.md, docs/standards/backend.md, SDD-BOOTSTRAP, and project-local SDD skills.
+  The directory name wwa-sdd-generate-all is retained for skill-set isomorphism with deployment-agent.
 ---
 
 # wwa-sdd-generate-all
 
-Generate the complete WWA Agent Hub SDD document set for one product slice.
+Generate the complete Quarry KB SDD document set for one product slice.
+
+The skill **directory name** `wwa-sdd-generate-all` is kept for isomorphism with the shared Agentic SDLC skill set from deployment-agent. Behavior and paths in this file are Quarry KB–local.
 
 This is a project-local orchestration skill. It coordinates smaller skills; it does not replace them.
 
@@ -27,52 +30,54 @@ Use project-local skills in this order (do not hand-write the entire set in one 
 | 6 | `design-to-tasks` | Implementation tasks |
 | 7 | `review-doc-quality` | Quality and traceability review |
 
-Use `architecture-review` when the slice materially changes architecture, platform/agent boundaries, API/persistence, security, audit, or data ownership.
+When the slice materially changes architecture, API/persistence, security, auth/roles, retrieval boundaries, or data ownership: capture or update an ADR under `docs/00-context/decisions/` and ensure `review-doc-quality` covers the decision links. This repository has no `architecture-review` skill.
 
 Use `review-code-against-design` only after implementation exists.
 
 ## When To Use
 
-- "为这个 slice 生成完整 SDD"
-- "一键生成 SDD"
+- "generate the full SDD for this slice"
+- "generate SDD in one pass"
 - "prepare SDD for implementation"
-- "bootstrap a new WWA feature slice"
+- "bootstrap a new Quarry KB feature slice"
 
 ## Required Context Before Generating
 
 1. `PROJECT_RULES.md`
-2. `AGENTS.md` / `CLAUDE.md`
-3. `DEVELOPMENT_STANDARDS.md`
+2. `AGENTS.md`
+3. `docs/standards/frontend.md` and/or `docs/standards/backend.md` when the slice touches that layer
 4. `docs/SDD-BOOTSTRAP.md`
 5. `docs/00-context/sdd-profile.md`
 6. Relevant ADRs under `docs/00-context/decisions/`
 7. Existing slice docs under `docs/01-*` … `docs/06-*`
-8. UI prototype / FE baseline when relevant (for example `docs/prototypes/`)
+8. UI baseline when relevant (only if such artifacts exist in the repo)
 
 ## Language
 
-English-only (ADR-0009). Do not create `.zh-CN.md` companions unless the user explicitly asks.
+English-only for project rules and SDD documents (`PROJECT_RULES.md`, `docs/00-context/sdd-profile.md`). Do not create `.zh-CN.md` companions unless the user explicitly asks.
 
-## Document Set (WWA Paths)
+## Document Set (Quarry KB Paths)
+
+Aligned with `docs/00-context/sdd-profile.md` and `docs/SDD-BOOTSTRAP.md`:
 
 1. `docs/01-requirements/{slice}-requirement.md`
 2. `docs/02-user-stories/{slice}-user-stories.md`
 3. `docs/03-spec/{slice}-spec.md`
 4. `docs/04-architecture/{slice}-architecture.md`
-5. Data flow when stateful/integrations: `…/{slice}-data-flow.md`
-6. Data model when persistence: `…/{slice}-data-model.md`
+5. `docs/04-architecture/{slice}-data-flow.md` when stateful workflows/integrations exist
+6. `docs/04-architecture/{slice}-data-model.md` when persistence exists
 7. `docs/05-design/{slice}-design.md`
-8. API guide when API changes: `docs/05-design/contracts/{slice}-API_IMPLEMENTATION_GUIDE.md`
+8. `docs/05-design/contracts/{slice}-API_IMPLEMENTATION_GUIDE.md` when API contracts change
 9. `docs/06-tasks/{slice}-tasks.md`
 10. `docs/00-context/{slice}-traceability.md`
 
-Keep WWA historical filenames (`-requirement`, `-user-stories`).
+Keep historical filenames (`-requirement`, `-user-stories`) for chain isomorphism.
 
 ## Workflow
 
 ### Step 1 — Slice contract
 
-Define slug, goal, in/out of scope, sources, acceptance, verification, constraints (security, agent boundary, audit, HITL).
+Define slug, goal, in/out of scope, sources, acceptance, verification, constraints (security, auth/roles, upload/knowledge boundaries, data-safety).
 
 ### Step 2 — Requirements
 
@@ -88,11 +93,11 @@ Happy path, empty/error states, acceptance matrix. `docs/03-spec/` is behavior s
 
 ### Step 5 — Architecture / data flow / data model
 
-Call out platform vs agent ownership, shared-component rules, persistence boundaries, audit expectations. Use `spec-to-architecture`.
+Call out auth/roles, upload vs metadata ownership, retrieval/RAG boundaries, persistence, and adapter seams. Use `spec-to-architecture`. Ground claims against the real codebase (`_shared/grounding-rules.md`); do not invent APIs, tables, or behaviors.
 
 ### Step 6 — Design
 
-UX, components, API/integration, test hooks. Ground UI in accepted prototypes when present. Use `architecture-to-design`.
+UX, components, API/integration, test hooks. Ground UI in an existing UI baseline when present. Use `architecture-to-design`.
 
 ### Step 7 — API guide
 
@@ -110,14 +115,16 @@ Link sources → requirements → stories → spec/design → tasks → verifica
 
 Apply `review-doc-quality` and `docs/00-context/checklists/sdd-generation-gate.md`.
 
-## WWA-Specific Constraints To Preserve
+## Quarry KB Constraints To Preserve
 
-- Multi-agent isolation: server-forced `effectiveAgent`; thin agent FE wrappers
-- Shared components must stay agent-agnostic
-- HITL classes in `CLAUDE.md` must never be auto-approved
-- Guest read-only mutations blocked
-- Enum backend ↔ frontend type sync
-- Flyway → regenerate `docs/sql/ORACLE_CURRENT_SCHEMA.sql`
+- Greenfield only; do not fork WeKnora
+- Stack: FastAPI + Vue 3 + PostgreSQL/pgvector + Docker Compose (ADR-0002)
+- Uploaded knowledge files stay out of Git; DB stores metadata/paths only
+- Auth: phase-1 password provider is pluggable; reserve `external_subject`; business logic uses internal `user_id` + roles `Admin` | `Editor` | `Viewer`
+- Parsers, LLM clients, and storage go through adapters (`docs/standards/backend.md`)
+- LLM output has a trust boundary; do not treat it as approved knowledge by default
+- Follow `docs/standards/frontend.md` and `docs/standards/backend.md`
+- No Java/Spring/Oracle defaults
 
 ## Final Response Must Include
 
@@ -126,6 +133,7 @@ Apply `review-doc-quality` and `docs/00-context/checklists/sdd-generation-gate.m
 - API guide included or deferred
 - Assumptions / open questions
 - **SDD skill chain used: yes** (list entry + downstream skill files read)
+- ADR created/updated or explicit `not applicable`
 - `review-doc-quality` result
 - Recommended implementation handoff command
 
