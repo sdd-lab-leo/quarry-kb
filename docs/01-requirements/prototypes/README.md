@@ -11,13 +11,14 @@ Static, mock-only prototypes for Quarry KB. These files illustrate intended prod
 ## How To Open
 
 ```sh
-open docs/prototypes/index.html
+open docs/01-requirements/prototypes/index.html
 ```
 
 No install step, build system, server, CDN, or framework is required.
 
 ## What The Prototype Demonstrates
 
+- Language switcher (`EN` / `中文`) in the top mock banner; preference is stored in `localStorage`
 - Role preview (`Admin` / `Editor` / `Viewer`) and how capability differences appear in the UI
 - Ask screen with inline citation markers, expandable sources, and a chat provider/model selector (internal + multiple public; FR-14h / D-06)
 - Public-provider egress notice on the Ask composer when a public model is selected

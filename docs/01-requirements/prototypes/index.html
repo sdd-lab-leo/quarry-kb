@@ -47,7 +47,35 @@
         border-bottom: 1px solid #f0dfc2;
         padding: 6px 16px;
         font-size: 12px;
-        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .mock-banner-text { flex: 1 1 auto; text-align: center; }
+
+      .lang-switch {
+        flex: 0 0 auto;
+        display: inline-flex;
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid #f0dfc2;
+        border-radius: 999px;
+        background: #fff;
+      }
+
+      .lang-switch button {
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: var(--ink-2);
+      }
+
+      .lang-switch button.on {
+        background: var(--teal-soft);
+        color: var(--teal);
+        font-weight: 550;
       }
 
       /* ---------- Login ---------- */
@@ -431,6 +459,8 @@
         .layout-split { grid-template-columns: 1fr; }
         .shell.on { grid-template-columns: 64px 1fr; }
         .side-head .brand-name, .sessions, .side-sub, .side-foot, .nav .tag { display: none; }
+        .mock-banner { flex-wrap: wrap; }
+        .mock-banner-text { text-align: left; }
       }
 
       .drawer { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
@@ -527,8 +557,11 @@
   </head>
   <body>
     <div class="mock-banner">
-      Mock prototype — static HTML, no backend, no real company data. Illustrates Quarry KB v0.1 scope only.
-      Use the shell toggle <strong>Simulate gateway down</strong> to preview D-07 degradation.
+      <div class="mock-banner-text" data-i18n-html="mock.banner"></div>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button type="button" data-lang="en" class="on">EN</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
     </div>
 
     <!-- ============ LOGIN ============ -->
@@ -538,32 +571,28 @@
           <span class="brand-dot">Q</span>
           <span class="brand-name">Quarry KB</span>
         </div>
-        <p class="muted small" style="margin: 6px 0 0">
-          Department knowledge workbench. Ask questions, get cited answers.
-        </p>
+        <p class="muted small" style="margin: 6px 0 0" data-i18n="login.tagline"></p>
 
         <div class="field">
-          <label for="account">Account</label>
+          <label for="account" data-i18n="login.account"></label>
           <input class="input" id="account" value="mock.user" />
         </div>
         <div class="field">
-          <label for="password">Password</label>
+          <label for="password" data-i18n="login.password"></label>
           <input class="input" id="password" type="password" value="········" />
         </div>
         <div class="field">
-          <button class="btn btn-primary btn-block" id="login-btn">Sign in</button>
+          <button class="btn btn-primary btn-block" id="login-btn" data-i18n="login.signIn"></button>
         </div>
 
         <div class="role-hint">
-          <div class="small muted">Prototype only: pick a role to preview permissions.</div>
+          <div class="small muted" data-i18n="login.roleHint"></div>
           <div class="role-row" id="role-picker">
-            <button class="chip on" data-role="Admin">Admin</button>
-            <button class="chip" data-role="Editor">Editor</button>
-            <button class="chip" data-role="Viewer">Viewer</button>
+            <button class="chip on" data-role="Admin" data-i18n="role.Admin"></button>
+            <button class="chip" data-role="Editor" data-i18n="role.Editor"></button>
+            <button class="chip" data-role="Viewer" data-i18n="role.Viewer"></button>
           </div>
-          <div class="small muted" style="margin-top: 10px">
-            Phase 2 will replace this screen with company SSO.
-          </div>
+          <div class="small muted" style="margin-top: 10px" data-i18n="login.ssoNote"></div>
         </div>
       </div>
     </section>
@@ -579,38 +608,38 @@
         </div>
 
         <nav class="nav" id="nav">
-          <button data-page="ask" class="on">Ask</button>
-          <button data-page="knowledge">Knowledge</button>
-          <button disabled>Wiki <span class="tag">later</span></button>
-          <button data-page="admin">Admin</button>
+          <button data-page="ask" class="on" data-i18n="nav.ask"></button>
+          <button data-page="knowledge" data-i18n="nav.knowledge"></button>
+          <button disabled><span data-i18n="nav.wiki"></span> <span class="tag" data-i18n="nav.later"></span></button>
+          <button data-page="admin" data-i18n="nav.admin"></button>
         </nav>
 
-        <div class="side-sub">My sessions</div>
+        <div class="side-sub" data-i18n="nav.sessions"></div>
         <div class="sessions" id="sessions">
-          <button class="on">Approval owner for change requests</button>
-          <button>Onboarding checklist for new joiners</button>
-          <button>Release cut-off rules</button>
-          <button>Which template for incident review?</button>
+          <button class="on" data-i18n="session.1"></button>
+          <button data-i18n="session.2"></button>
+          <button data-i18n="session.3"></button>
+          <button data-i18n="session.4"></button>
         </div>
 
         <div class="side-foot">
-          <div class="small muted">v0.1 prototype</div>
-          <button class="btn btn-ghost btn-sm btn-block" id="signout" style="margin-top: 8px">Sign out</button>
+          <div class="small muted" data-i18n="shell.prototype"></div>
+          <button class="btn btn-ghost btn-sm btn-block" id="signout" style="margin-top: 8px" data-i18n="shell.signOut"></button>
         </div>
       </aside>
 
       <main class="main">
         <header class="topbar">
-          <h1 id="page-title">Ask</h1>
+          <h1 id="page-title"></h1>
           <div class="topbar-tools">
-            <label class="toggle-chip" title="Prototype only: preview D-07">
+            <label class="toggle-chip" data-i18n-title="gateway.toggleTitle">
               <input type="checkbox" id="gateway-down-toggle" />
-              Simulate gateway down
+              <span data-i18n="gateway.toggle"></span>
             </label>
             <div class="user-chip">
               <span class="avatar" id="avatar">MU</span>
-              <span class="small">Mock User</span>
-              <span class="role-pill" id="role-pill">Admin</span>
+              <span class="small" data-i18n="shell.mockUser"></span>
+              <span class="role-pill" id="role-pill"></span>
             </div>
           </div>
         </header>
@@ -620,99 +649,66 @@
           <div class="thread">
             <div class="thread-inner">
               <div class="banner banner-error degrade-only" id="ask-gateway-error">
-                <div>
-                  <strong>Internal gateway is unavailable.</strong>
-                  Retry, or switch to another enabled model (e.g. DeepSeek). Quarry does not
-                  auto-switch providers. Session history below stays readable.
-                </div>
+                <div data-i18n-html="ask.gatewayError"></div>
               </div>
               <div class="banner banner-warn degrade-only" id="ask-keyword-notice" style="display:none">
-                <div>
-                  <strong>Semantic search unavailable.</strong>
-                  Using keyword match only while the gateway embedding path is down. Citations still
-                  required when chunks are found.
-                </div>
+                <div data-i18n-html="ask.keywordNotice"></div>
               </div>
 
-              <div class="turn-user">Who approves a change request for the payment module?</div>
+              <div class="turn-user" data-i18n="ask.q1"></div>
 
               <div class="answer">
                 <div class="answer-body">
-                  <div class="small muted" style="margin-bottom:8px">Answered with · Internal Gateway · default</div>
-                  <p>
-                    A change request for the payment module is approved by the module owner first,
-                    then by the release manager during the weekly change window
-                    <span class="cite">1</span><span class="cite">2</span>.
-                  </p>
-                  <p>
-                    If the change is classified as emergency, the release manager may approve alone,
-                    but a retrospective review is required within two working days
-                    <span class="cite">3</span>.
-                  </p>
+                  <div class="small muted" style="margin-bottom:8px" data-i18n="ask.answeredWith"></div>
+                  <p data-i18n-html="ask.a1p1"></p>
+                  <p data-i18n-html="ask.a1p2"></p>
                 </div>
                 <div class="sources open">
                   <button class="sources-head" data-toggle="sources">
-                    <span>Sources · 3</span><span class="muted">collapse</span>
+                    <span data-i18n="ask.sources3"></span><span class="muted" data-i18n="ask.collapse"></span>
                   </button>
                   <div class="sources-list">
                     <div class="source">
                       <span class="idx">1</span>
                       <div>
-                        <div class="loc">Change Management Handbook (mock) · page 12</div>
-                        <div class="snip">
-                          "Module owners are the first approval gate for any change request affecting
-                          their component…"
-                        </div>
+                        <div class="loc" data-i18n="ask.src1.loc"></div>
+                        <div class="snip" data-i18n="ask.src1.snip"></div>
                       </div>
-                      <button class="btn btn-ghost btn-sm" data-open-doc>Open</button>
+                      <button class="btn btn-ghost btn-sm" data-open-doc data-i18n="common.open"></button>
                     </div>
                     <div class="source">
                       <span class="idx">2</span>
                       <div>
-                        <div class="loc">Weekly Release Process (mock) · chunk 4</div>
-                        <div class="snip">
-                          "The release manager confirms approved changes during the weekly change
-                          window before the cut-off…"
-                        </div>
+                        <div class="loc" data-i18n="ask.src2.loc"></div>
+                        <div class="snip" data-i18n="ask.src2.snip"></div>
                       </div>
-                      <button class="btn btn-ghost btn-sm" data-open-doc>Open</button>
+                      <button class="btn btn-ghost btn-sm" data-open-doc data-i18n="common.open"></button>
                     </div>
                     <div class="source">
                       <span class="idx">3</span>
                       <div>
-                        <div class="loc">Emergency Change Policy (mock) · page 3</div>
-                        <div class="snip">
-                          "Emergency changes may proceed with a single approval, followed by a
-                          retrospective review within two working days…"
-                        </div>
+                        <div class="loc" data-i18n="ask.src3.loc"></div>
+                        <div class="snip" data-i18n="ask.src3.snip"></div>
                       </div>
-                      <button class="btn btn-ghost btn-sm" data-open-doc>Open</button>
+                      <button class="btn btn-ghost btn-sm" data-open-doc data-i18n="common.open"></button>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div class="turn-user">What is the budget for next year's team offsite?</div>
+              <div class="turn-user" data-i18n="ask.q2"></div>
 
               <div class="answer">
                 <div class="answer-body">
-                  <p>
-                    No basis found in the knowledge base for this question. The indexed documents do
-                    not cover offsite budgets.
-                  </p>
-                  <p class="small muted">
-                    Expected behavior per FR-35: state that there is no supporting content instead of
-                    producing an unsupported answer.
-                  </p>
+                  <p data-i18n="ask.a2p1"></p>
+                  <p class="small muted" data-i18n="ask.a2p2"></p>
                 </div>
                 <div class="sources">
                   <button class="sources-head" data-toggle="sources">
-                    <span>Sources · 0</span><span class="muted">expand</span>
+                    <span data-i18n="ask.sources0"></span><span class="muted" data-i18n="ask.expand"></span>
                   </button>
                   <div class="sources-list">
-                    <div class="empty-note small">
-                      Retrieval returned no chunk above the relevance threshold.
-                    </div>
+                    <div class="empty-note small" data-i18n="ask.noChunks"></div>
                   </div>
                 </div>
               </div>
@@ -724,25 +720,22 @@
               <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px">
                 <div class="mode-switch">
                   <button class="on">RAG</button>
-                  <button disabled>Agent <span class="tag">later</span></button>
+                  <button disabled>Agent <span class="tag" data-i18n="nav.later"></span></button>
                 </div>
                 <label class="small muted" for="provider-select" style="display:flex;align-items:center;gap:8px">
-                  Model
+                  <span data-i18n="ask.model"></span>
                   <select class="input" id="provider-select" style="width:auto;min-width:200px;padding:5px 8px">
-                    <option selected>Internal Gateway · default</option>
-                    <option>DeepSeek · deepseek-chat</option>
-                    <option>Public Provider B · gpt-compatible</option>
+                    <option selected data-i18n="ask.provider.internal"></option>
+                    <option data-i18n="ask.provider.deepseek"></option>
+                    <option data-i18n="ask.provider.publicb"></option>
                   </select>
                 </label>
               </div>
               <div class="composer-box">
-                <textarea placeholder="Ask a question about department documents…"></textarea>
-                <button class="btn btn-primary">Ask</button>
+                <textarea data-i18n-placeholder="ask.placeholder"></textarea>
+                <button class="btn btn-primary" data-i18n="nav.ask"></button>
               </div>
-              <div class="small muted" style="margin-top: 8px" id="provider-notice">
-                Answers are assistive output grounded in uploaded documents. Always open the citation
-                before relying on it.
-              </div>
+              <div class="small muted" style="margin-top: 8px" id="provider-notice"></div>
             </div>
           </div>
         </section>
@@ -752,27 +745,20 @@
           <div class="body">
             <div class="body-inner">
               <div class="banner banner-ok healthy-only">
-                <div>
-                  <strong>Browse is independent of the gateway.</strong>
-                  Knowledge list and indexed document detail stay available even when the gateway is down.
-                </div>
+                <div data-i18n-html="knowledge.healthy"></div>
               </div>
               <div class="banner banner-warn degrade-only">
-                <div>
-                  <strong>Internal gateway unavailable — Browse still works.</strong>
-                  Upload still accepts files, but new OCR/embedding ingest may fail. Reindex after recovery.
-                  Already-indexed documents remain fully readable.
-                </div>
+                <div data-i18n-html="knowledge.degrade"></div>
               </div>
               <div class="toolbar">
-                <input class="input grow" placeholder="Search by title…" />
+                <input class="input grow" data-i18n-placeholder="knowledge.search" />
                 <div class="chips">
-                  <button class="chip on">All</button>
-                  <button class="chip">Indexed</button>
-                  <button class="chip">Parsing</button>
-                  <button class="chip">Failed</button>
+                  <button class="chip on" data-i18n="knowledge.filter.all"></button>
+                  <button class="chip" data-i18n="status.indexed"></button>
+                  <button class="chip" data-i18n="status.parsing"></button>
+                  <button class="chip" data-i18n="status.failed"></button>
                 </div>
-                <button class="btn btn-primary" id="upload-open" data-requires="editor">Upload</button>
+                <button class="btn btn-primary" id="upload-open" data-requires="editor" data-i18n="knowledge.upload"></button>
               </div>
 
               <div class="layout-split">
@@ -780,69 +766,69 @@
                   <table>
                     <thead>
                       <tr>
-                        <th>Title</th>
-                        <th>Type</th>
-                        <th>Owner</th>
-                        <th class="nowrap">Chunks</th>
-                        <th>Status</th>
-                        <th class="nowrap">Updated</th>
+                        <th data-i18n="knowledge.col.title"></th>
+                        <th data-i18n="knowledge.col.type"></th>
+                        <th data-i18n="knowledge.col.owner"></th>
+                        <th class="nowrap" data-i18n="knowledge.col.chunks"></th>
+                        <th data-i18n="knowledge.col.status"></th>
+                        <th class="nowrap" data-i18n="knowledge.col.updated"></th>
                       </tr>
                     </thead>
                     <tbody id="doc-rows">
                       <tr class="on">
-                        <td class="doc-title">Change Management Handbook (mock)</td>
+                        <td class="doc-title" data-i18n="doc.handbook"></td>
                         <td>PDF</td>
                         <td>editor.a</td>
                         <td>184</td>
-                        <td><span class="pill pill-indexed">Indexed</span></td>
+                        <td><span class="pill pill-indexed" data-i18n="status.indexed"></span></td>
                         <td class="nowrap muted">2026-07-24</td>
                       </tr>
                       <tr>
-                        <td class="doc-title">Weekly Release Process (mock)</td>
+                        <td class="doc-title" data-i18n="doc.release"></td>
                         <td>MD</td>
                         <td>editor.a</td>
                         <td>42</td>
-                        <td><span class="pill pill-indexed">Indexed</span></td>
+                        <td><span class="pill pill-indexed" data-i18n="status.indexed"></span></td>
                         <td class="nowrap muted">2026-07-24</td>
                       </tr>
                       <tr>
-                        <td class="doc-title">Emergency Change Policy (mock)</td>
+                        <td class="doc-title" data-i18n="doc.emergency"></td>
                         <td>DOCX</td>
                         <td>editor.b</td>
                         <td>27</td>
-                        <td><span class="pill pill-indexed">Indexed</span></td>
+                        <td><span class="pill pill-indexed" data-i18n="status.indexed"></span></td>
                         <td class="nowrap muted">2026-07-23</td>
                       </tr>
                       <tr>
-                        <td class="doc-title">Onboarding Checklist (mock)</td>
+                        <td class="doc-title" data-i18n="doc.onboarding"></td>
                         <td>MD</td>
                         <td>editor.b</td>
                         <td>—</td>
-                        <td><span class="pill pill-parsing">Parsing</span></td>
+                        <td><span class="pill pill-parsing" data-i18n="status.parsing"></span></td>
                         <td class="nowrap muted">2026-07-25</td>
                       </tr>
                       <tr>
-                        <td class="doc-title">Scanned Vendor Form (mock)</td>
+                        <td class="doc-title" data-i18n="doc.vendor"></td>
                         <td>PDF</td>
                         <td>editor.a</td>
                         <td>—</td>
-                        <td><span class="pill pill-failed">Failed</span></td>
+                        <td><span class="pill pill-failed" data-i18n="status.failed"></span></td>
                         <td class="nowrap muted">2026-07-25</td>
                       </tr>
                       <tr class="degrade-only">
-                        <td class="doc-title">Weekly Ops Notes (mock)</td>
+                        <td class="doc-title" data-i18n="doc.ops"></td>
                         <td>MD</td>
                         <td>editor.a</td>
                         <td>—</td>
-                        <td><span class="pill pill-failed">Failed</span></td>
-                        <td class="nowrap muted">gateway embedding unavailable</td>
+                        <td><span class="pill pill-failed" data-i18n="status.failed"></span></td>
+                        <td class="nowrap muted" data-i18n="knowledge.gatewayUnavailable"></td>
                       </tr>
                       <tr>
-                        <td class="doc-title">Incident Review Template (mock)</td>
+                        <td class="doc-title" data-i18n="doc.incident"></td>
                         <td>TXT</td>
                         <td>admin</td>
                         <td>—</td>
-                        <td><span class="pill pill-queued">Queued</span></td>
+                        <td><span class="pill pill-queued" data-i18n="status.queued"></span></td>
                         <td class="nowrap muted">2026-07-25</td>
                       </tr>
                     </tbody>
@@ -850,32 +836,30 @@
                 </div>
 
                 <div class="drawer">
-                  <h3>Change Management Handbook (mock)</h3>
+                  <h3 data-i18n="doc.handbook"></h3>
                   <div class="small muted">change-management-handbook.pdf</div>
                   <dl class="kv">
-                    <dt>Status</dt>
-                    <dd><span class="pill pill-indexed">Indexed</span></dd>
-                    <dt>Parse mode</dt>
-                    <dd>Native text</dd>
-                    <dt>Type</dt>
+                    <dt data-i18n="knowledge.col.status"></dt>
+                    <dd><span class="pill pill-indexed" data-i18n="status.indexed"></span></dd>
+                    <dt data-i18n="knowledge.parseMode"></dt>
+                    <dd data-i18n="knowledge.nativeText"></dd>
+                    <dt data-i18n="knowledge.col.type"></dt>
                     <dd>PDF · 4.2 MB</dd>
-                    <dt>Chunks</dt>
+                    <dt data-i18n="knowledge.col.chunks"></dt>
                     <dd>184</dd>
-                    <dt>Owner</dt>
+                    <dt data-i18n="knowledge.col.owner"></dt>
                     <dd>editor.a</dd>
-                    <dt>Uploaded</dt>
+                    <dt data-i18n="knowledge.uploaded"></dt>
                     <dd>2026-07-24 09:12</dd>
-                    <dt>Indexed</dt>
+                    <dt data-i18n="status.indexed"></dt>
                     <dd>2026-07-24 09:14</dd>
                   </dl>
                   <div class="drawer-actions">
-                    <button class="btn btn-ghost btn-sm" data-page-link="document">Open detail</button>
-                    <button class="btn btn-ghost btn-sm" data-requires="editor">Reindex</button>
-                    <button class="btn btn-danger btn-sm" data-requires="editor">Delete</button>
+                    <button class="btn btn-ghost btn-sm" data-page-link="document" data-i18n="knowledge.openDetail"></button>
+                    <button class="btn btn-ghost btn-sm" data-requires="editor" data-i18n="knowledge.reindex"></button>
+                    <button class="btn btn-danger btn-sm" data-requires="editor" data-i18n="knowledge.delete"></button>
                   </div>
-                  <div class="small muted" style="margin-top: 12px">
-                    Viewers can read metadata but cannot upload, reindex, or delete.
-                  </div>
+                  <div class="small muted" style="margin-top: 12px" data-i18n="knowledge.viewerNote"></div>
                 </div>
               </div>
             </div>
@@ -886,65 +870,45 @@
         <section class="page" id="page-document">
           <div class="body">
             <div class="body-inner">
-              <button class="back-link" data-page-link="knowledge">← Back to Knowledge</button>
+              <button class="back-link" data-page-link="knowledge" data-i18n="document.back"></button>
 
               <div class="banner banner-error">
-                <div>
-                  <strong>One document needs attention.</strong>
-                  "Scanned Vendor Form (mock)" failed gateway multimodal OCR on pages 2–4 (gateway timeout).
-                  Per D-05, OCR uses the internal gateway multimodal path; Editors can reindex after the gateway recovers.
-                </div>
+                <div data-i18n-html="document.attention"></div>
               </div>
 
               <div class="layout-split">
                 <div>
                   <div class="card" style="padding: 18px">
-                    <h2 style="margin: 0 0 4px; font-size: 17px">Change Management Handbook (mock)</h2>
-                    <div class="small muted">
-                      PDF · 4.2 MB · 184 chunks · uploaded by editor.a on 2026-07-24
-                    </div>
+                    <h2 style="margin: 0 0 4px; font-size: 17px" data-i18n="doc.handbook"></h2>
+                    <div class="small muted" data-i18n="document.meta"></div>
                   </div>
 
-                  <div class="section-title">Chunk preview</div>
+                  <div class="section-title" data-i18n="document.chunkPreview"></div>
                   <div class="chunk">
-                    <div class="loc">chunk 0 · page 1</div>
-                    <div>
-                      This handbook describes how change requests are raised, reviewed, approved, and
-                      recorded for department-owned systems…
-                    </div>
+                    <div class="loc" data-i18n="document.chunk0"></div>
+                    <div data-i18n="document.chunk0body"></div>
                   </div>
                   <div class="chunk">
-                    <div class="loc">chunk 12 · page 12</div>
-                    <div>
-                      Module owners are the first approval gate for any change request affecting their
-                      component. The release manager confirms scheduling…
-                    </div>
+                    <div class="loc" data-i18n="document.chunk12"></div>
+                    <div data-i18n="document.chunk12body"></div>
                   </div>
                   <div class="chunk">
-                    <div class="loc">chunk 13 · page 12</div>
-                    <div>
-                      Approvals must be recorded before the weekly cut-off. Late submissions move to the
-                      next window unless classified as emergency…
-                    </div>
+                    <div class="loc" data-i18n="document.chunk13"></div>
+                    <div data-i18n="document.chunk13body"></div>
                   </div>
-                  <button class="btn btn-ghost btn-sm">Load more chunks</button>
+                  <button class="btn btn-ghost btn-sm" data-i18n="document.loadMore"></button>
                 </div>
 
                 <div class="drawer">
-                  <h3>Actions</h3>
-                  <div class="small muted">Editor or Admin only</div>
+                  <h3 data-i18n="document.actions"></h3>
+                  <div class="small muted" data-i18n="document.editorOnly"></div>
                   <div class="drawer-actions">
-                    <button class="btn btn-ghost btn-sm" data-requires="editor">Reindex</button>
-                    <button class="btn btn-ghost btn-sm" data-requires="editor">Replace file</button>
-                    <button class="btn btn-danger btn-sm" data-requires="editor">Delete</button>
+                    <button class="btn btn-ghost btn-sm" data-requires="editor" data-i18n="knowledge.reindex"></button>
+                    <button class="btn btn-ghost btn-sm" data-requires="editor" data-i18n="document.replace"></button>
+                    <button class="btn btn-danger btn-sm" data-requires="editor" data-i18n="knowledge.delete"></button>
                   </div>
-                  <div class="section-title" style="margin-top: 20px">Ingestion timeline</div>
-                  <div class="small muted">
-                    09:12 uploaded<br />
-                    09:12 queued<br />
-                    09:13 parsing<br />
-                    09:14 indexed (184 chunks)
-                  </div>
+                  <div class="section-title" style="margin-top: 20px" data-i18n="document.timeline"></div>
+                  <div class="small muted" data-i18n-html="document.timelineBody"></div>
                 </div>
               </div>
             </div>
@@ -956,121 +920,117 @@
           <div class="body">
             <div class="body-inner">
               <div class="toolbar">
-                <input class="input grow" placeholder="Search users…" />
-                <button class="btn btn-primary">Add user</button>
+                <input class="input grow" data-i18n-placeholder="admin.searchUsers" />
+                <button class="btn btn-primary" data-i18n="admin.addUser"></button>
               </div>
 
               <div class="card">
                 <table>
                   <thead>
                     <tr>
-                      <th>Account</th>
-                      <th>Name</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th class="nowrap">Last active</th>
+                      <th data-i18n="admin.col.account"></th>
+                      <th data-i18n="admin.col.name"></th>
+                      <th data-i18n="admin.col.role"></th>
+                      <th data-i18n="admin.col.status"></th>
+                      <th class="nowrap" data-i18n="admin.col.lastActive"></th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td class="doc-title">admin</td>
-                      <td>Mock Admin</td>
+                      <td data-i18n="admin.user.admin"></td>
                       <td>
                         <select class="input">
-                          <option selected>Admin</option>
-                          <option>Editor</option>
-                          <option>Viewer</option>
+                          <option selected data-i18n="role.Admin"></option>
+                          <option data-i18n="role.Editor"></option>
+                          <option data-i18n="role.Viewer"></option>
                         </select>
                       </td>
-                      <td><span class="pill pill-indexed">Active</span></td>
+                      <td><span class="pill pill-indexed" data-i18n="admin.active"></span></td>
                       <td class="nowrap muted">2026-07-25</td>
                     </tr>
                     <tr>
                       <td class="doc-title">editor.a</td>
-                      <td>Mock Editor A</td>
+                      <td data-i18n="admin.user.editorA"></td>
                       <td>
                         <select class="input">
-                          <option>Admin</option>
-                          <option selected>Editor</option>
-                          <option>Viewer</option>
+                          <option data-i18n="role.Admin"></option>
+                          <option selected data-i18n="role.Editor"></option>
+                          <option data-i18n="role.Viewer"></option>
                         </select>
                       </td>
-                      <td><span class="pill pill-indexed">Active</span></td>
+                      <td><span class="pill pill-indexed" data-i18n="admin.active"></span></td>
                       <td class="nowrap muted">2026-07-25</td>
                     </tr>
                     <tr>
                       <td class="doc-title">viewer.c</td>
-                      <td>Mock Viewer C</td>
+                      <td data-i18n="admin.user.viewerC"></td>
                       <td>
                         <select class="input">
-                          <option>Admin</option>
-                          <option>Editor</option>
-                          <option selected>Viewer</option>
+                          <option data-i18n="role.Admin"></option>
+                          <option data-i18n="role.Editor"></option>
+                          <option selected data-i18n="role.Viewer"></option>
                         </select>
                       </td>
-                      <td><span class="pill pill-queued">Disabled</span></td>
+                      <td><span class="pill pill-queued" data-i18n="admin.disabled"></span></td>
                       <td class="nowrap muted">2026-07-21</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <div class="section-title">Chat providers</div>
+              <div class="section-title" data-i18n="admin.providers"></div>
               <div class="card">
-                <div class="small muted" style="margin-bottom:12px">
-                  Multiple public providers may be enabled at once. Users select among enabled
-                  display names on Ask; API keys stay Admin-only. Enabling a public endpoint shows
-                  an Ask-time data-egress warning.
-                </div>
+                <div class="small muted" style="margin-bottom:12px" data-i18n="admin.providersHelp"></div>
                 <table>
                   <thead>
                     <tr>
-                      <th>Display name</th>
-                      <th>Kind</th>
-                      <th>Model</th>
-                      <th>Status</th>
-                      <th>Default</th>
+                      <th data-i18n="admin.col.displayName"></th>
+                      <th data-i18n="admin.col.kind"></th>
+                      <th data-i18n="admin.col.model"></th>
+                      <th data-i18n="admin.col.status"></th>
+                      <th data-i18n="admin.col.default"></th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td class="doc-title">Internal Gateway</td>
-                      <td>Intranet</td>
+                      <td class="doc-title" data-i18n="admin.provider.internal"></td>
+                      <td data-i18n="admin.kind.intranet"></td>
                       <td class="muted">default</td>
-                      <td><span class="pill pill-indexed">Enabled</span></td>
-                      <td>Yes</td>
+                      <td><span class="pill pill-indexed" data-i18n="admin.enabled"></span></td>
+                      <td data-i18n="common.yes"></td>
                     </tr>
                     <tr>
                       <td class="doc-title">DeepSeek</td>
-                      <td>Public</td>
+                      <td data-i18n="admin.kind.public"></td>
                       <td class="muted">deepseek-chat</td>
-                      <td><span class="pill pill-indexed">Enabled</span></td>
-                      <td>No</td>
+                      <td><span class="pill pill-indexed" data-i18n="admin.enabled"></span></td>
+                      <td data-i18n="common.no"></td>
                     </tr>
                     <tr>
-                      <td class="doc-title">Public Provider B</td>
-                      <td>Public</td>
+                      <td class="doc-title" data-i18n="admin.provider.publicb"></td>
+                      <td data-i18n="admin.kind.public"></td>
                       <td class="muted">gpt-compatible</td>
-                      <td><span class="pill pill-indexed">Enabled</span></td>
-                      <td>No</td>
+                      <td><span class="pill pill-indexed" data-i18n="admin.enabled"></span></td>
+                      <td data-i18n="common.no"></td>
                     </tr>
                   </tbody>
                 </table>
                 <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-                  <button class="btn btn-primary">Add provider</button>
-                  <button class="btn btn-ghost">Edit selected</button>
+                  <button class="btn btn-primary" data-i18n="admin.addProvider"></button>
+                  <button class="btn btn-ghost" data-i18n="admin.editSelected"></button>
                 </div>
               </div>
 
-              <div class="section-title">Recent audit entries</div>
+              <div class="section-title" data-i18n="admin.audit"></div>
               <div class="card">
                 <table>
                   <thead>
                     <tr>
-                      <th class="nowrap">Time</th>
-                      <th>Actor</th>
-                      <th>Action</th>
-                      <th>Target</th>
+                      <th class="nowrap" data-i18n="admin.col.time"></th>
+                      <th data-i18n="admin.col.actor"></th>
+                      <th data-i18n="admin.col.action"></th>
+                      <th data-i18n="admin.col.target"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1078,25 +1038,25 @@
                       <td class="nowrap muted">2026-07-25 11:02</td>
                       <td>admin</td>
                       <td>chat_provider.enable</td>
-                      <td>Public Provider B (public · egress warning ack)</td>
+                      <td data-i18n="admin.audit.1"></td>
                     </tr>
                     <tr>
                       <td class="nowrap muted">2026-07-25 10:41</td>
                       <td>editor.a</td>
                       <td>document.upload</td>
-                      <td>Incident Review Template (mock)</td>
+                      <td data-i18n="doc.incident"></td>
                     </tr>
                     <tr>
                       <td class="nowrap muted">2026-07-25 10:22</td>
                       <td>editor.b</td>
                       <td>document.reindex</td>
-                      <td>Onboarding Checklist (mock)</td>
+                      <td data-i18n="doc.onboarding"></td>
                     </tr>
                     <tr>
                       <td class="nowrap muted">2026-07-24 16:05</td>
                       <td>admin</td>
                       <td>user.role_change</td>
-                      <td>viewer.c → Viewer</td>
+                      <td data-i18n="admin.audit.4"></td>
                     </tr>
                   </tbody>
                 </table>
@@ -1110,22 +1070,16 @@
     <!-- ============ Upload modal ============ -->
     <div class="modal-mask" id="upload-modal">
       <div class="modal">
-        <h3 style="margin: 0 0 4px; font-size: 16px">Upload documents</h3>
-        <div class="small muted">Supported in v0.1: Markdown, TXT, PDF, DOCX · max 50 MB each</div>
+        <h3 style="margin: 0 0 4px; font-size: 16px" data-i18n="upload.title"></h3>
+        <div class="small muted" data-i18n="upload.formats"></div>
         <div class="banner banner-warn degrade-only" style="margin-top:12px">
-          <div>
-            <strong>Upload still accepts files.</strong>
-            Files are stored now; indexing may fail with
-            "Internal gateway unavailable — retry / reindex later" until the gateway recovers.
-          </div>
+          <div data-i18n-html="upload.degrade"></div>
         </div>
-        <div class="drop">Drop files here, or click to choose (mock)</div>
-        <div class="small muted" style="margin-top: 12px">
-          Never upload real company documents into this prototype.
-        </div>
+        <div class="drop" data-i18n="upload.drop"></div>
+        <div class="small muted" style="margin-top: 12px" data-i18n="upload.neverReal"></div>
         <div class="modal-actions">
-          <button class="btn btn-ghost" data-close-modal>Cancel</button>
-          <button class="btn btn-primary" data-close-modal>Start upload</button>
+          <button class="btn btn-ghost" data-close-modal data-i18n="common.cancel"></button>
+          <button class="btn btn-primary" data-close-modal data-i18n="upload.start"></button>
         </div>
       </div>
     </div>
@@ -1134,38 +1088,433 @@
       const $ = (sel) => document.querySelector(sel);
       const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-      const titles = {
-        ask: "Ask",
-        knowledge: "Knowledge",
-        document: "Document detail",
-        admin: "Admin · Users & providers",
+      const I18N = {
+        en: {
+          "page.title": "Quarry KB — v0.1 Prototype (Mock)",
+          "mock.banner":
+            "Mock prototype — static HTML, no backend, no real company data. Illustrates Quarry KB v0.1 scope only. Use the shell toggle <strong>Simulate gateway down</strong> to preview D-07 degradation.",
+          "login.tagline": "Department knowledge workbench. Ask questions, get cited answers.",
+          "login.account": "Account",
+          "login.password": "Password",
+          "login.signIn": "Sign in",
+          "login.roleHint": "Prototype only: pick a role to preview permissions.",
+          "login.ssoNote": "Phase 2 will replace this screen with company SSO.",
+          "role.Admin": "Admin",
+          "role.Editor": "Editor",
+          "role.Viewer": "Viewer",
+          "nav.ask": "Ask",
+          "nav.knowledge": "Knowledge",
+          "nav.wiki": "Wiki",
+          "nav.later": "later",
+          "nav.admin": "Admin",
+          "nav.sessions": "My sessions",
+          "session.1": "Approval owner for change requests",
+          "session.2": "Onboarding checklist for new joiners",
+          "session.3": "Release cut-off rules",
+          "session.4": "Which template for incident review?",
+          "shell.prototype": "v0.1 prototype",
+          "shell.signOut": "Sign out",
+          "shell.mockUser": "Mock User",
+          "gateway.toggle": "Simulate gateway down",
+          "gateway.toggleTitle": "Prototype only: preview D-07",
+          "title.ask": "Ask",
+          "title.knowledge": "Knowledge",
+          "title.document": "Document detail",
+          "title.admin": "Admin · Users & providers",
+          "ask.gatewayError":
+            "<strong>Internal gateway is unavailable.</strong> Retry, or switch to another enabled model (e.g. DeepSeek). Quarry does not auto-switch providers. Session history below stays readable.",
+          "ask.keywordNotice":
+            "<strong>Semantic search unavailable.</strong> Using keyword match only while the gateway embedding path is down. Citations still required when chunks are found.",
+          "ask.q1": "Who approves a change request for the payment module?",
+          "ask.answeredWith": "Answered with · Internal Gateway · default",
+          "ask.a1p1":
+            'A change request for the payment module is approved by the module owner first, then by the release manager during the weekly change window <span class="cite">1</span><span class="cite">2</span>.',
+          "ask.a1p2":
+            'If the change is classified as emergency, the release manager may approve alone, but a retrospective review is required within two working days <span class="cite">3</span>.',
+          "ask.sources3": "Sources · 3",
+          "ask.sources0": "Sources · 0",
+          "ask.collapse": "collapse",
+          "ask.expand": "expand",
+          "ask.src1.loc": "Change Management Handbook (mock) · page 12",
+          "ask.src1.snip":
+            '"Module owners are the first approval gate for any change request affecting their component…"',
+          "ask.src2.loc": "Weekly Release Process (mock) · chunk 4",
+          "ask.src2.snip":
+            '"The release manager confirms approved changes during the weekly change window before the cut-off…"',
+          "ask.src3.loc": "Emergency Change Policy (mock) · page 3",
+          "ask.src3.snip":
+            '"Emergency changes may proceed with a single approval, followed by a retrospective review within two working days…"',
+          "common.open": "Open",
+          "common.cancel": "Cancel",
+          "common.yes": "Yes",
+          "common.no": "No",
+          "ask.q2": "What is the budget for next year's team offsite?",
+          "ask.a2p1":
+            "No basis found in the knowledge base for this question. The indexed documents do not cover offsite budgets.",
+          "ask.a2p2":
+            "Expected behavior per FR-35: state that there is no supporting content instead of producing an unsupported answer.",
+          "ask.noChunks": "Retrieval returned no chunk above the relevance threshold.",
+          "ask.model": "Model",
+          "ask.provider.internal": "Internal Gateway · default",
+          "ask.provider.deepseek": "DeepSeek · deepseek-chat",
+          "ask.provider.publicb": "Public Provider B · gpt-compatible",
+          "ask.placeholder": "Ask a question about department documents…",
+          "ask.notice.default":
+            "Answers are assistive output grounded in uploaded documents. Always open the citation before relying on it.",
+          "ask.notice.public":
+            "Public model selected: retrieved document snippets may leave the intranet with this Ask. Answers remain assistive—open citations before relying on them.",
+          "ask.notice.publicDown":
+            "Public model selected while gateway is down: chat may still work; retrieved snippets may leave the intranet. Semantic search uses keyword-only until embedding recovers.",
+          "knowledge.healthy":
+            "<strong>Browse is independent of the gateway.</strong> Knowledge list and indexed document detail stay available even when the gateway is down.",
+          "knowledge.degrade":
+            "<strong>Internal gateway unavailable — Browse still works.</strong> Upload still accepts files, but new OCR/embedding ingest may fail. Reindex after recovery. Already-indexed documents remain fully readable.",
+          "knowledge.search": "Search by title…",
+          "knowledge.filter.all": "All",
+          "knowledge.upload": "Upload",
+          "knowledge.col.title": "Title",
+          "knowledge.col.type": "Type",
+          "knowledge.col.owner": "Owner",
+          "knowledge.col.chunks": "Chunks",
+          "knowledge.col.status": "Status",
+          "knowledge.col.updated": "Updated",
+          "knowledge.parseMode": "Parse mode",
+          "knowledge.nativeText": "Native text",
+          "knowledge.uploaded": "Uploaded",
+          "knowledge.openDetail": "Open detail",
+          "knowledge.reindex": "Reindex",
+          "knowledge.delete": "Delete",
+          "knowledge.viewerNote": "Viewers can read metadata but cannot upload, reindex, or delete.",
+          "knowledge.gatewayUnavailable": "gateway embedding unavailable",
+          "status.indexed": "Indexed",
+          "status.parsing": "Parsing",
+          "status.failed": "Failed",
+          "status.queued": "Queued",
+          "doc.handbook": "Change Management Handbook (mock)",
+          "doc.release": "Weekly Release Process (mock)",
+          "doc.emergency": "Emergency Change Policy (mock)",
+          "doc.onboarding": "Onboarding Checklist (mock)",
+          "doc.vendor": "Scanned Vendor Form (mock)",
+          "doc.ops": "Weekly Ops Notes (mock)",
+          "doc.incident": "Incident Review Template (mock)",
+          "document.back": "← Back to Knowledge",
+          "document.attention":
+            '<strong>One document needs attention.</strong> "Scanned Vendor Form (mock)" failed gateway multimodal OCR on pages 2–4 (gateway timeout). Per D-05, OCR uses the internal gateway multimodal path; Editors can reindex after the gateway recovers.',
+          "document.meta": "PDF · 4.2 MB · 184 chunks · uploaded by editor.a on 2026-07-24",
+          "document.chunkPreview": "Chunk preview",
+          "document.chunk0": "chunk 0 · page 1",
+          "document.chunk0body":
+            "This handbook describes how change requests are raised, reviewed, approved, and recorded for department-owned systems…",
+          "document.chunk12": "chunk 12 · page 12",
+          "document.chunk12body":
+            "Module owners are the first approval gate for any change request affecting their component. The release manager confirms scheduling…",
+          "document.chunk13": "chunk 13 · page 12",
+          "document.chunk13body":
+            "Approvals must be recorded before the weekly cut-off. Late submissions move to the next window unless classified as emergency…",
+          "document.loadMore": "Load more chunks",
+          "document.actions": "Actions",
+          "document.editorOnly": "Editor or Admin only",
+          "document.replace": "Replace file",
+          "document.timeline": "Ingestion timeline",
+          "document.timelineBody":
+            "09:12 uploaded<br />09:12 queued<br />09:13 parsing<br />09:14 indexed (184 chunks)",
+          "admin.searchUsers": "Search users…",
+          "admin.addUser": "Add user",
+          "admin.col.account": "Account",
+          "admin.col.name": "Name",
+          "admin.col.role": "Role",
+          "admin.col.status": "Status",
+          "admin.col.lastActive": "Last active",
+          "admin.col.displayName": "Display name",
+          "admin.col.kind": "Kind",
+          "admin.col.model": "Model",
+          "admin.col.default": "Default",
+          "admin.col.time": "Time",
+          "admin.col.actor": "Actor",
+          "admin.col.action": "Action",
+          "admin.col.target": "Target",
+          "admin.user.admin": "Mock Admin",
+          "admin.user.editorA": "Mock Editor A",
+          "admin.user.viewerC": "Mock Viewer C",
+          "admin.active": "Active",
+          "admin.disabled": "Disabled",
+          "admin.enabled": "Enabled",
+          "admin.providers": "Chat providers",
+          "admin.providersHelp":
+            "Multiple public providers may be enabled at once. Users select among enabled display names on Ask; API keys stay Admin-only. Enabling a public endpoint shows an Ask-time data-egress warning.",
+          "admin.provider.internal": "Internal Gateway",
+          "admin.provider.publicb": "Public Provider B",
+          "admin.kind.intranet": "Intranet",
+          "admin.kind.public": "Public",
+          "admin.addProvider": "Add provider",
+          "admin.editSelected": "Edit selected",
+          "admin.audit": "Recent audit entries",
+          "admin.audit.1": "Public Provider B (public · egress warning ack)",
+          "admin.audit.4": "viewer.c → Viewer",
+          "upload.title": "Upload documents",
+          "upload.formats": "Supported in v0.1: Markdown, TXT, PDF, DOCX · max 50 MB each",
+          "upload.degrade":
+            '<strong>Upload still accepts files.</strong> Files are stored now; indexing may fail with "Internal gateway unavailable — retry / reindex later" until the gateway recovers.',
+          "upload.drop": "Drop files here, or click to choose (mock)",
+          "upload.neverReal": "Never upload real company documents into this prototype.",
+          "upload.start": "Start upload",
+          "title.requiresEditor": "Requires Editor or Admin",
+          "title.adminOnly": "Admin only",
+        },
+        zh: {
+          "page.title": "Quarry KB — v0.1 原型（模拟）",
+          "mock.banner":
+            "模拟原型 — 静态 HTML，无后端，无真实公司数据。仅展示 Quarry KB v0.1 范围。使用界面开关<strong>模拟网关不可用</strong>可预览 D-07 降级。",
+          "login.tagline": "部门知识工作台。提问即可获得带引用的答案。",
+          "login.account": "账号",
+          "login.password": "密码",
+          "login.signIn": "登录",
+          "login.roleHint": "仅原型：选择角色以预览权限差异。",
+          "login.ssoNote": "第二阶段将用公司 SSO 替换本登录页。",
+          "role.Admin": "管理员",
+          "role.Editor": "编辑者",
+          "role.Viewer": "查看者",
+          "nav.ask": "问答",
+          "nav.knowledge": "知识库",
+          "nav.wiki": "Wiki",
+          "nav.later": "后续",
+          "nav.admin": "管理",
+          "nav.sessions": "我的会话",
+          "session.1": "变更请求的审批责任人",
+          "session.2": "新人入职检查清单",
+          "session.3": "发布截止规则",
+          "session.4": "事故复盘该用哪份模板？",
+          "shell.prototype": "v0.1 原型",
+          "shell.signOut": "退出登录",
+          "shell.mockUser": "模拟用户",
+          "gateway.toggle": "模拟网关不可用",
+          "gateway.toggleTitle": "仅原型：预览 D-07",
+          "title.ask": "问答",
+          "title.knowledge": "知识库",
+          "title.document": "文档详情",
+          "title.admin": "管理 · 用户与模型提供方",
+          "ask.gatewayError":
+            "<strong>内部网关不可用。</strong>请重试，或切换到其他已启用模型（如 DeepSeek）。Quarry 不会自动切换提供方。下方会话历史仍可阅读。",
+          "ask.keywordNotice":
+            "<strong>语义检索不可用。</strong>网关嵌入路径不可用期间仅使用关键词匹配。找到片段时仍需展示引用。",
+          "ask.q1": "支付模块的变更请求由谁审批？",
+          "ask.answeredWith": "回答来源 · 内部网关 · default",
+          "ask.a1p1":
+            '支付模块的变更请求先由模块负责人审批，再由发布经理在每周变更窗口确认 <span class="cite">1</span><span class="cite">2</span>。',
+          "ask.a1p2":
+            '若变更被判定为紧急变更，发布经理可单独审批，但须在两个工作日内完成复盘 <span class="cite">3</span>。',
+          "ask.sources3": "来源 · 3",
+          "ask.sources0": "来源 · 0",
+          "ask.collapse": "收起",
+          "ask.expand": "展开",
+          "ask.src1.loc": "变更管理手册（模拟） · 第 12 页",
+          "ask.src1.snip": "“模块负责人是影响其组件的任何变更请求的第一道审批关卡……”",
+          "ask.src2.loc": "每周发布流程（模拟） · 片段 4",
+          "ask.src2.snip": "“发布经理在每周变更窗口截止前确认已批准的变更……”",
+          "ask.src3.loc": "紧急变更策略（模拟） · 第 3 页",
+          "ask.src3.snip": "“紧急变更可在单一审批后推进，并须在两个工作日内完成复盘……”",
+          "common.open": "打开",
+          "common.cancel": "取消",
+          "common.yes": "是",
+          "common.no": "否",
+          "ask.q2": "明年团队团建的预算是多少？",
+          "ask.a2p1": "知识库中未找到支撑该问题的依据。已索引文档未覆盖团建预算。",
+          "ask.a2p2": "符合 FR-35：应明确说明无支撑内容，而不是给出无依据的答案。",
+          "ask.noChunks": "检索未返回超过相关性阈值的片段。",
+          "ask.model": "模型",
+          "ask.provider.internal": "内部网关 · default",
+          "ask.provider.deepseek": "DeepSeek · deepseek-chat",
+          "ask.provider.publicb": "公共提供方 B · gpt-compatible",
+          "ask.placeholder": "就部门文档提出问题…",
+          "ask.notice.default": "回答为基于已上传文档的辅助输出。采信前请先打开引用核对。",
+          "ask.notice.public":
+            "已选择公共模型：本次问答检索到的文档片段可能离开内网。回答仍为辅助输出——采信前请打开引用。",
+          "ask.notice.publicDown":
+            "网关不可用时选择了公共模型：聊天可能仍可用；检索片段可能离开内网。语义检索在嵌入恢复前仅使用关键词匹配。",
+          "knowledge.healthy":
+            "<strong>浏览不依赖网关。</strong>即使网关不可用，知识库列表与已索引文档详情仍可访问。",
+          "knowledge.degrade":
+            "<strong>内部网关不可用 — 浏览仍可用。</strong>上传仍会接收文件，但新的 OCR/嵌入入库可能失败。恢复后请重新索引。已索引文档仍可完整阅读。",
+          "knowledge.search": "按标题搜索…",
+          "knowledge.filter.all": "全部",
+          "knowledge.upload": "上传",
+          "knowledge.col.title": "标题",
+          "knowledge.col.type": "类型",
+          "knowledge.col.owner": "所有者",
+          "knowledge.col.chunks": "片段",
+          "knowledge.col.status": "状态",
+          "knowledge.col.updated": "更新时间",
+          "knowledge.parseMode": "解析模式",
+          "knowledge.nativeText": "原生文本",
+          "knowledge.uploaded": "上传时间",
+          "knowledge.openDetail": "打开详情",
+          "knowledge.reindex": "重新索引",
+          "knowledge.delete": "删除",
+          "knowledge.viewerNote": "查看者可阅读元数据，但不能上传、重新索引或删除。",
+          "knowledge.gatewayUnavailable": "网关嵌入不可用",
+          "status.indexed": "已索引",
+          "status.parsing": "解析中",
+          "status.failed": "失败",
+          "status.queued": "排队中",
+          "doc.handbook": "变更管理手册（模拟）",
+          "doc.release": "每周发布流程（模拟）",
+          "doc.emergency": "紧急变更策略（模拟）",
+          "doc.onboarding": "入职检查清单（模拟）",
+          "doc.vendor": "扫描供应商表单（模拟）",
+          "doc.ops": "每周运维笔记（模拟）",
+          "doc.incident": "事故复盘模板（模拟）",
+          "document.back": "← 返回知识库",
+          "document.attention":
+            "<strong>有一份文档需要关注。</strong>“扫描供应商表单（模拟）”在第 2–4 页网关多模态 OCR 失败（网关超时）。按 D-05，OCR 走内部网关多模态路径；网关恢复后编辑者可重新索引。",
+          "document.meta": "PDF · 4.2 MB · 184 个片段 · 由 editor.a 于 2026-07-24 上传",
+          "document.chunkPreview": "片段预览",
+          "document.chunk0": "片段 0 · 第 1 页",
+          "document.chunk0body":
+            "本手册说明部门自有系统中变更请求如何提出、评审、审批与记录……",
+          "document.chunk12": "片段 12 · 第 12 页",
+          "document.chunk12body":
+            "模块负责人是影响其组件的任何变更请求的第一道审批关卡。发布经理负责确认排期……",
+          "document.chunk13": "片段 13 · 第 12 页",
+          "document.chunk13body":
+            "审批须在每周截止前完成记录。逾期提交将顺延至下一窗口，除非判定为紧急变更……",
+          "document.loadMore": "加载更多片段",
+          "document.actions": "操作",
+          "document.editorOnly": "仅编辑者或管理员",
+          "document.replace": "替换文件",
+          "document.timeline": "入库时间线",
+          "document.timelineBody":
+            "09:12 已上传<br />09:12 排队中<br />09:13 解析中<br />09:14 已索引（184 个片段）",
+          "admin.searchUsers": "搜索用户…",
+          "admin.addUser": "添加用户",
+          "admin.col.account": "账号",
+          "admin.col.name": "姓名",
+          "admin.col.role": "角色",
+          "admin.col.status": "状态",
+          "admin.col.lastActive": "最近活跃",
+          "admin.col.displayName": "显示名称",
+          "admin.col.kind": "类型",
+          "admin.col.model": "模型",
+          "admin.col.default": "默认",
+          "admin.col.time": "时间",
+          "admin.col.actor": "操作者",
+          "admin.col.action": "动作",
+          "admin.col.target": "对象",
+          "admin.user.admin": "模拟管理员",
+          "admin.user.editorA": "模拟编辑者 A",
+          "admin.user.viewerC": "模拟查看者 C",
+          "admin.active": "启用",
+          "admin.disabled": "停用",
+          "admin.enabled": "已启用",
+          "admin.providers": "对话提供方",
+          "admin.providersHelp":
+            "可同时启用多个公共提供方。用户在问答页从已启用的显示名称中选择；API 密钥仅管理员可见。启用公共端点时，问答页会显示数据出站提示。",
+          "admin.provider.internal": "内部网关",
+          "admin.provider.publicb": "公共提供方 B",
+          "admin.kind.intranet": "内网",
+          "admin.kind.public": "公共",
+          "admin.addProvider": "添加提供方",
+          "admin.editSelected": "编辑所选",
+          "admin.audit": "最近审计记录",
+          "admin.audit.1": "公共提供方 B（公共 · 已确认出站提示）",
+          "admin.audit.4": "viewer.c → 查看者",
+          "upload.title": "上传文档",
+          "upload.formats": "v0.1 支持：Markdown、TXT、PDF、DOCX · 单文件最大 50 MB",
+          "upload.degrade":
+            "<strong>上传仍会接收文件。</strong>文件现已保存；在网关恢复前，索引可能失败并提示“内部网关不可用 — 请稍后重试 / 重新索引”。",
+          "upload.drop": "将文件拖到此处，或点击选择（模拟）",
+          "upload.neverReal": "请勿将真实公司文档上传到本原型。",
+          "upload.start": "开始上传",
+          "title.requiresEditor": "需要编辑者或管理员",
+          "title.adminOnly": "仅管理员",
+        },
       };
 
+      let lang = localStorage.getItem("quarry-proto-lang") || "en";
       let role = "Admin";
+      let currentPage = "ask";
+
+      function t(key) {
+        return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
+      }
+
+      function applyI18n() {
+        document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+        document.title = t("page.title");
+
+        $$("[data-i18n]").forEach((el) => {
+          el.textContent = t(el.getAttribute("data-i18n"));
+        });
+        $$("[data-i18n-html]").forEach((el) => {
+          el.innerHTML = t(el.getAttribute("data-i18n-html"));
+        });
+        $$("[data-i18n-placeholder]").forEach((el) => {
+          el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
+        });
+        $$("[data-i18n-title]").forEach((el) => {
+          el.title = t(el.getAttribute("data-i18n-title"));
+        });
+
+        $$(".lang-switch button").forEach((btn) => {
+          btn.classList.toggle("on", btn.dataset.lang === lang);
+        });
+
+        // Re-bind citation chips after HTML replacement in answers
+        $$(".cite").forEach((chip) => {
+          chip.onclick = () => {
+            const box = chip.closest(".answer").querySelector(".sources");
+            box.classList.add("open");
+            const toggleLabel = box.querySelector(".sources-head").lastElementChild;
+            toggleLabel.textContent = t("ask.collapse");
+            box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          };
+        });
+
+        // Sync sources open/closed labels
+        $$("[data-toggle='sources']").forEach((btn) => {
+          const box = btn.closest(".sources");
+          btn.lastElementChild.textContent = box.classList.contains("open")
+            ? t("ask.collapse")
+            : t("ask.expand");
+        });
+
+        applyRole(role);
+        showPage(currentPage);
+        refreshProviderNotice();
+      }
+
+      function setLang(next) {
+        lang = next === "zh" ? "zh" : "en";
+        localStorage.setItem("quarry-proto-lang", lang);
+        applyI18n();
+      }
 
       function showPage(page) {
+        currentPage = page;
         $$(".page").forEach((p) => p.classList.remove("on"));
         const target = document.getElementById("page-" + page);
         if (target) target.classList.add("on");
-        $("#page-title").textContent = titles[page] || page;
+        $("#page-title").textContent = t("title." + page) || page;
         $$("#nav button").forEach((b) =>
-          b.classList.toggle("on", b.dataset.page === page || (page === "document" && b.dataset.page === "knowledge"))
+          b.classList.toggle(
+            "on",
+            b.dataset.page === page || (page === "document" && b.dataset.page === "knowledge")
+          )
         );
       }
 
       function applyRole(next) {
         role = next;
-        $("#role-pill").textContent = role;
+        $("#role-pill").textContent = t("role." + role);
         const canEdit = role === "Admin" || role === "Editor";
         $$("[data-requires='editor']").forEach((el) => {
           el.disabled = !canEdit;
-          el.title = canEdit ? "" : "Requires Editor or Admin";
+          el.title = canEdit ? "" : t("title.requiresEditor");
         });
         const adminNav = $$("#nav button").find((b) => b.dataset.page === "admin");
         if (adminNav) {
           const isAdmin = role === "Admin";
           adminNav.disabled = !isAdmin;
-          adminNav.title = isAdmin ? "" : "Admin only";
+          adminNav.title = isAdmin ? "" : t("title.adminOnly");
           if (!isAdmin && $("#page-admin").classList.contains("on")) showPage("ask");
         }
       }
@@ -1207,16 +1556,9 @@
         btn.onclick = () => {
           const box = btn.closest(".sources");
           box.classList.toggle("open");
-          btn.lastElementChild.textContent = box.classList.contains("open") ? "collapse" : "expand";
-        };
-      });
-
-      $$(".cite").forEach((chip) => {
-        chip.onclick = () => {
-          const box = chip.closest(".answer").querySelector(".sources");
-          box.classList.add("open");
-          box.querySelector(".sources-head").lastElementChild.textContent = "collapse";
-          box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          btn.lastElementChild.textContent = box.classList.contains("open")
+            ? t("ask.collapse")
+            : t("ask.expand");
         };
       });
 
@@ -1251,6 +1593,10 @@
         };
       });
 
+      $$(".lang-switch button").forEach((btn) => {
+        btn.onclick = () => setLang(btn.dataset.lang);
+      });
+
       const providerSelect = $("#provider-select");
       const providerNotice = $("#provider-notice");
       const gatewayToggle = $("#gateway-down-toggle");
@@ -1261,16 +1607,13 @@
         const publicSelected = providerSelect.selectedIndex > 0;
         const gatewayDown = document.body.classList.contains("gateway-down");
         if (gatewayDown && publicSelected) {
-          providerNotice.textContent =
-            "Public model selected while gateway is down: chat may still work; retrieved snippets may leave the intranet. Semantic search uses keyword-only until embedding recovers.";
+          providerNotice.textContent = t("ask.notice.publicDown");
           providerNotice.style.color = "var(--amber)";
         } else if (publicSelected) {
-          providerNotice.textContent =
-            "Public model selected: retrieved document snippets may leave the intranet with this Ask. Answers remain assistive—open citations before relying on them.";
+          providerNotice.textContent = t("ask.notice.public");
           providerNotice.style.color = "var(--amber)";
         } else {
-          providerNotice.textContent =
-            "Answers are assistive output grounded in uploaded documents. Always open the citation before relying on it.";
+          providerNotice.textContent = t("ask.notice.default");
           providerNotice.style.color = "";
         }
         if (askGatewayError && askKeywordNotice) {
@@ -1287,7 +1630,8 @@
 
       providerSelect.onchange = refreshProviderNotice;
       gatewayToggle.onchange = () => setGatewayDown(gatewayToggle.checked);
-      refreshProviderNotice();
+
+      applyI18n();
     </script>
   </body>
 </html>
