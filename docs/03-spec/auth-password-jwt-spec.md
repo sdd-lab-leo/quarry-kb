@@ -1,7 +1,7 @@
 # Feature Specification: Password Authentication and JWT Authorization
 
 > **Source stories:** US-AUTH-001 through US-AUTH-004
-> **Spec status:** Draft
+> **Spec status:** Draft — remediated after independent SDD review
 > **Last updated:** 2026-07-26
 
 ---
@@ -21,8 +21,10 @@ An Admin can provision accounts, active users can log in, protected APIs can res
 
 - `docs/01-requirements/auth-password-jwt-requirement.md`
 - `docs/02-user-stories/auth-password-jwt-user-stories.md`
-- `docs/01-requirements/quarry-kb-product-spec-v0.1.md` — FR-01 to FR-07, FR-50 to FR-51, SEC-01/02, AC-01/02
+- `docs/01-requirements/quarry-kb-product-spec-v0.1.md` — FR-01 to FR-07, FR-50 to FR-51, SEC-01/02, AC-01 (role matrix foundation)
 - `docs/00-context/decisions/ADR-0002-lock-technology-stack-and-auth-evolution.md`
+- `docs/00-context/decisions/ADR-0005-bootstrap-probe-allowlist-and-readiness-contract.md`
+- `docs/00-context/decisions/ADR-0006-pilot-auth-security-defaults.md` (Proposed)
 - `docs/00-context/changes/20260726-repo-bootstrap/archive.md`
 - `docs/standards/backend.md` and `docs/standards/frontend.md`
 
@@ -41,8 +43,8 @@ An Admin can provision accounts, active users can log in, protected APIs can res
 ### Authentication
 
 - **FR-AUTH-001**: The system accepts an account identifier and password at the login boundary and returns a bearer JWT only for an active account with a valid password. *(Source: FR-01)*
-- **FR-AUTH-002**: The system stores a password hash, never plaintext password material. *(Source: FR-02)*
-- **FR-AUTH-003**: Authentication failures are intentionally non-distinguishing for unknown identifier, invalid password, and inactive account. *(Derived from SEC-02 and account privacy; proposed default)*
+- **FR-AUTH-002**: The system stores a password hash using Argon2id, never plaintext password material. *(Source: FR-02; ADR-0006)*
+- **FR-AUTH-003**: Authentication failures are intentionally non-distinguishing for unknown identifier, invalid password, and inactive account. *(Derived from account privacy / SEC-02; proposed default)*
 
 ### Identity and roles
 
@@ -56,6 +58,8 @@ An Admin can provision accounts, active users can log in, protected APIs can res
 - **FR-AUTH-008**: An Admin can list accounts with safe identity, role, status, and timestamps. *(Source: FR-50)*
 - **FR-AUTH-009**: An Admin can assign a new role, deactivate an account, and reactivate an account. *(Source: FR-03 and FR-51)*
 - **FR-AUTH-010**: A deactivated account cannot log in and an existing token is rejected on the next protected request. *(Source: FR-05)*
+- **FR-AUTH-014**: The system rejects any operation that would deactivate or demote the last remaining active Admin. *(Source: REQ-AUTH-014; ADR-0006)*
+- **FR-AUTH-015**: When zero Admin accounts exist, a one-time runtime env bootstrap may create exactly one active Admin; bootstrap is ignored afterward. *(Source: REQ-AUTH-015; ADR-0006)*
 
 ### Boundary enforcement
 
@@ -65,13 +69,15 @@ An Admin can provision accounts, active users can log in, protected APIs can res
 
 ## Non-Functional Requirements
 
-- **Security:** Password hashing must use a current password-hashing library with a deliberately configured work factor; plaintext password, password hash, JWT, bearer header, and secret-shaped values must not appear in logs or responses.
-- **Security:** JWT signing material must be injected at runtime and must fail closed when missing in a non-local environment. `[DEFAULT - algorithm and key rotation require owner confirmation]`
+- **Security:** Password hashing uses Argon2id through a maintained library; plaintext password, password hash, JWT, bearer header, and secret-shaped values must not appear in logs or responses.
+- **Security:** JWT signing uses HS256 with runtime secret material and fails closed when missing in a non-local environment. `[DEFAULT pending ADR-0006 acceptance]`
+- **Security:** Access tokens must include `auth_version`. Deactivation increments `auth_version`. Protected requests reject version mismatches and inactive accounts. This invalidation mechanism is mandatory.
 - **Reliability:** A deactivation must be observed on the next protected request without waiting for token expiry. A current-user lookup is therefore part of protected-request authorization.
 - **Consistency:** A role change must be used on the next authorization check; the role claim in a previously issued token is not authoritative.
-- **Privacy:** Login failures must not disclose whether an account exists. User list and current-user responses must exclude password hashes, tokens, external provider credentials, and internal secret values.
+- **Privacy:** Login failures must not disclose whether an account exists. User list and current-user responses must exclude password hashes, tokens, external provider credentials, `external_subject` by default, `auth_version`, and internal secret values.
 - **Performance:** No product latency target is specified for authentication. The implementation should keep authorization lookup bounded and index-backed; a measurable target remains an open question.
 - **Environment support:** Unit and API tests must run without live SSO, paid services, or external network calls. Compose/PostgreSQL migration smoke is required before implementation handoff is accepted.
+- **Abuse controls:** Login rate limiting / lockout is deferred for the intranet pilot and is not required in this slice. `[DEFERRED]`
 
 ## Workflow / System Flow
 
@@ -84,7 +90,7 @@ flowchart TD
     C -- "Yes" --> D["Issue short-lived bearer JWT"]
     D --> F["Frontend stores session safely"]
     F --> G["Protected request"]
-    G --> H{"Token valid and account active?"}
+    G --> H{"Token valid, auth_version matches, account active?"}
     H -- "No" --> I["401; discard session"]
     H -- "Yes" --> J{"Current role allowed?"}
     J -- "No" --> K["403; no business action"]
@@ -103,11 +109,12 @@ flowchart TD
 
 1. The user submits credentials to the public login endpoint.
 2. The API normalizes the account identifier according to the approved identifier rule, loads the user, verifies the password hash, and checks active status.
-3. On success, the API issues a short-lived JWT access token and safe current-user data. On failure, it returns one generic authentication error.
-4. The frontend keeps the token in the approved session mechanism and requests the current-user profile on startup.
-5. A protected request validates the token, resolves the current internal user, checks active status, and evaluates the current database role.
-6. An Admin account operation commits atomically. The next authorization check observes its new role/status.
-7. Logout discards the browser token. Deactivation rejects an unexpired token on the next protected request.
+3. On success, the API issues a short-lived JWT access token containing `sub`, `iat`, `exp`, and `auth_version`, plus safe current-user data. On failure, it returns one generic authentication error.
+4. The frontend keeps the token in memory with `sessionStorage` reload fallback and requests the current-user profile on startup.
+5. A protected request validates the token, resolves the current internal user, checks active status and `auth_version`, and evaluates the current database role.
+6. An Admin account operation commits atomically. Last-Admin demotion/deactivation is rejected. The next authorization check observes committed role/status.
+7. Logout discards the browser token. Deactivation increments `auth_version` and rejects an unexpired token on the next protected request. Reactivation does not restore pre-deactivation tokens.
+8. On first boot with zero Admins, approved bootstrap env vars may create exactly one Admin.
 
 ## Data / Configuration Requirements
 
@@ -115,29 +122,32 @@ flowchart TD
 
 | Entity | Description | Key attributes |
 |---|---|---|
-| User | Local account and authorization owner | `user_id`, identifier, display name, role, status, password hash, nullable `external_subject`, session/auth version, timestamps |
+| User | Local account and authorization owner | `user_id`, identifier, display name, role, status, password hash, nullable `external_subject`, mandatory `auth_version`, timestamps |
 
 ### Configuration
 
 - JWT signing key material: runtime secret; required outside local development.
-- JWT algorithm: `[DEFAULT]` HS256 for the single-host pilot unless an approved security decision selects asymmetric signing.
+- JWT algorithm: `[DEFAULT]` HS256 for the single-host pilot (ADR-0006).
 - Access token lifetime: `[DEFAULT]` 30 minutes; no refresh token in this slice.
-- Password hashing work factor: configured by the password adapter; exact library/work factor must be pinned in implementation review.
+- Password hashing: Argon2id via a maintained library; encoded hash string persisted only.
 - Password policy: `[DEFAULT]` minimum 12 characters, no plaintext logging, no complexity regex unless product owner changes the rule.
+- First-Admin bootstrap env vars: `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER`, `AUTH_BOOTSTRAP_ADMIN_PASSWORD`, optional `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME`.
 
 ### Status and Role Models
 
 - Account status: `active` ↔ `deactivated`; only Admin can trigger transitions.
 - Roles: `Admin`, `Editor`, `Viewer`; exactly one value per account.
 - Authorization transition: an account role/status change is effective on the next protected request.
+- Last active Admin cannot be deactivated or demoted.
 
 ### Validation Rules
 
-- Account identifier is non-empty after trimming and uses the approved normalization rule.
+- Account identifier is non-empty after trimming, length 3–64, matches `[a-z0-9._@-]+` after lowercase normalization.
 - Role must be exactly one of the three role values.
 - Password must satisfy the approved policy and is never echoed in a response.
 - An account identifier must be unique under normalized comparison.
 - `external_subject` is nullable and not writable through the phase-one password UI.
+- Updates that would leave zero active Admins are rejected.
 
 ## Integrations
 
@@ -152,6 +162,7 @@ flowchart TD
 - Calls login/current-user/admin-user APIs through the shared typed client.
 - Attaches a bearer token only after a successful login.
 - Never logs token or password values.
+- Never stores access tokens in `localStorage`.
 
 ### External identity provider
 
@@ -163,11 +174,12 @@ The API uses the P0 envelope: `success`, `data`, `error`, and `meta`.
 
 | Code | HTTP | Meaning |
 |---|---:|---|
-| `AUTHENTICATION_FAILED` | 401 | Identifier/password invalid or account inactive; intentionally non-distinguishing. |
-| `TOKEN_INVALID` | 401 | Missing, malformed, expired, or unverifiable bearer token. |
-| `ACCOUNT_INACTIVE` | 401 | Token maps to a currently deactivated account. |
+| `AUTHENTICATION_FAILED` | 401 | Identifier/password invalid or account inactive at login; intentionally non-distinguishing. |
+| `TOKEN_INVALID` | 401 | Missing, malformed, expired, unverifiable bearer token, or token subject no longer maps to a user. |
+| `ACCOUNT_INACTIVE` | 401 | Token maps to a currently deactivated account or `auth_version` mismatch. |
 | `FORBIDDEN` | 403 | Authenticated account lacks the required current role. |
 | `ACCOUNT_CONFLICT` | 409 | Normalized identifier already exists. |
+| `LAST_ADMIN_REQUIRED` | 409 | Operation would remove or demote the last active Admin. |
 | `VALIDATION_ERROR` | 422 | Request fields violate the approved input rules. |
 | `USER_NOT_FOUND` | 404 | Admin target user does not exist; no secret data is disclosed. |
 
@@ -178,6 +190,7 @@ The API uses the P0 envelope: `success`, `data`, `error`, and `meta`.
 - Verified `repo-bootstrap` runtime, migration, API envelope, and frontend client baseline.
 - ADR-0002 role and password-to-SSO evolution decision.
 - ADR-0005 health-probe authorization exception.
+- Proposed ADR-0006 pilot auth security defaults.
 
 ### Downstream
 
@@ -190,8 +203,8 @@ The API uses the P0 envelope: `success`, `data`, `error`, and `meta`.
 
 | ID | Description | Type | Impact | Recommendation |
 |---|---|---|---|---|
-| R-AUTH-001 | First Admin bootstrap path is not specified. | Gap | High | Confirm OQ-AUTH-002 before implementation. |
-| R-AUTH-002 | JWT lifetime, algorithm, and browser storage are not product-locked. | Unclear | High | Approve the proposed defaults or record an ADR before apply. |
+| R-AUTH-001 | First Admin bootstrap path depends on ADR-0006 acceptance. | Gap | High | Accept or amend ADR-0006 / OQ-AUTH-002 before implementation. |
+| R-AUTH-002 | JWT lifetime, algorithm, and browser storage are proposed defaults. | Unclear | High | Accept ADR-0006 or record amendments before apply. |
 | R-AUTH-003 | Audit requirements include account actions, but audit persistence is a later slice. | Boundary | Medium | Keep audit out of this slice and make `audit-minimal` the follow-up gate. |
 | R-AUTH-004 | No user retention/deletion policy is defined. | Gap | Medium | Use deactivation only for v0.1 and defer deletion/retention to a later decision. |
 
@@ -201,7 +214,8 @@ The API uses the P0 envelope: `success`, `data`, `error`, and `meta`.
 - Knowledge and model capabilities.
 - Audit table/list and provider configuration.
 - Password recovery, MFA, registration, invitations, and refresh tokens.
+- Login rate limiting / account lockout for the intranet pilot.
 
 ## Open Questions
 
-See `auth-password-jwt-requirement.md` OQ-AUTH-001 through OQ-AUTH-005. These must be accepted or explicitly defaulted before implementation handoff.
+See `auth-password-jwt-requirement.md` OQ-AUTH-001 through OQ-AUTH-005 and proposed ADR-0006. These must be accepted or explicitly amended before implementation handoff.

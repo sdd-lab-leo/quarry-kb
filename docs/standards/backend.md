@@ -44,9 +44,11 @@ Rules:
 ## Auth And Identity
 
 - Phase 1: Password provider + JWT (see ADR-0002).
+- Pilot security defaults: proposed ADR-0006 (Argon2id, HS256, mandatory `auth_version`, env bootstrap, no `localStorage` access tokens).
 - Reserve `external_subject` (or equivalent) on the user record for Phase 2 SSO mapping.
-- Business logic authorizes on internal `user_id` and role, never on raw IdP subject strings scattered through services.
+- Business logic authorizes on internal `user_id` and **current database role**, never on raw IdP subject strings or stale JWT role claims.
 - Identity providers are pluggable adapters; password login must not paint the domain into a dead-end design.
+- Health probes remain the ADR-0005 infrastructure exception and are not business-auth evidence.
 
 ## Authorization Roles
 

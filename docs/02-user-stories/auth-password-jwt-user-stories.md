@@ -40,7 +40,7 @@ As an active Quarry KB user, I want to log in with my account identifier and pas
 
 ### Open Questions
 
-- Confirm token lifetime, password policy, first-Admin bootstrap, and browser token storage defaults in `auth-password-jwt-requirement.md`.
+- Confirm ADR-0006 / OQ-AUTH defaults for token lifetime, password policy, first-Admin bootstrap, and browser token storage.
 
 ## Story US-AUTH-002: Manage Accounts And Roles
 
@@ -60,11 +60,18 @@ As an Admin, I want to create, list, activate, deactivate, and assign roles to a
 4. **Given** a duplicate identifier or invalid role
    **When** an Admin submits the account operation
    **Then** the API rejects it with a typed validation/conflict error and leaves existing account data unchanged.
+5. **Given** only one active Admin remains
+   **When** an Admin attempts to deactivate or demote that Admin
+   **Then** the API rejects the change and the last Admin remains active with role `Admin`.
+6. **Given** zero Admin accounts exist and valid bootstrap env vars are configured
+   **When** the application starts
+   **Then** exactly one active Admin is created and later startups do not recreate bootstrap Admins.
 
 ### Notes / Assumptions
 
 - Exactly one role is stored per account: `Admin`, `Editor`, or `Viewer`.
 - Audit records are deferred to `audit-minimal`; this story does not imply an audit table.
+- Admin-supplied initial password is used for ordinary account creation; bootstrap uses runtime env vars only for the first Admin.
 
 ### Dependencies
 
@@ -77,7 +84,7 @@ As an Admin, I want to create, list, activate, deactivate, and assign roles to a
 
 ### Open Questions
 
-- Confirm the first-Admin bootstrap path and whether account creation returns a one-time credential or accepts an Admin-supplied initial password.
+- Confirm ADR-0006 / OQ-AUTH-002 bootstrap env contract before implementation.
 
 ## Story US-AUTH-003: Enforce Current Server-Side Authorization
 

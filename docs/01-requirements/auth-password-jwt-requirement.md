@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft — generated after `repo-bootstrap` verification; not yet approved for implementation.
+Draft — remediated after independent SDD review; not yet approved for implementation.
 
 ## Slice Contract
 
@@ -11,9 +11,9 @@ Draft — generated after `repo-bootstrap` verification; not yet approved for im
 | Slice | `auth-password-jwt` |
 | Goal | Provide account/password login, JWT access sessions, server-side role authorization, and Admin-managed account lifecycle. |
 | Upstream | `docs/01-requirements/quarry-kb-product-spec-v0.1.md`, FR-01 to FR-07 and FR-50 to FR-51 |
-| Related decisions | ADR-0002; the P0 `repo-bootstrap` SDD chain and API envelope |
+| Related decisions | ADR-0002; ADR-0005; proposed ADR-0006; the P0 `repo-bootstrap` SDD chain and API envelope |
 | Verification | Backend unit/API tests, migration upgrade/reapply, frontend build, protected-route smoke, and role matrix checks |
-| Stage naming note | The project plan calls engineering foundation P1 and identity P2, while the current delivery language calls verified `repo-bootstrap` P0. This document follows the product-spec slice order: `auth-password-jwt` is the next slice after `repo-bootstrap`. |
+| Stage naming note | The project plan calls engineering foundation P1 and identity P2, while current delivery language calls verified `repo-bootstrap` P0. This document follows the product-spec slice order: `auth-password-jwt` is the next slice after `repo-bootstrap`. Identity work in this slice does **not** include audit persistence; audit remains `audit-minimal` and is part of the broader plan P2 exit gate. |
 
 ## Context
 
@@ -40,6 +40,7 @@ The source product specification defines phase-one password authentication with 
 - Server-side authentication and role dependencies for future business endpoints.
 - Current-user endpoint for session bootstrap and frontend display.
 - Client-side token storage and logout-by-token-discard for the pilot browser.
+- One-time first-Admin bootstrap from runtime environment variables.
 - Safe authentication failure envelopes and redaction tests.
 - Health probe exception inherited from ADR-0005: `/api/v1/health/live` and `/api/v1/health/ready` remain infrastructure endpoints and are not business authorization evidence.
 
@@ -69,6 +70,8 @@ The source product specification defines phase-one password authentication with 
 | REQ-AUTH-011 | Only the login and infrastructure health endpoints are unauthenticated; future business endpoints require a valid active-user token. | SEC-01, ADR-0005 | Must |
 | REQ-AUTH-012 | Authentication errors use the P0 response envelope and do not reveal whether a submitted identifier exists. | SEC-02, security baseline | Must |
 | REQ-AUTH-013 | The frontend can restore a valid session, show the current user and role, and discard the token on logout or authentication failure. | FR-01, FR-07, frontend standard | Should |
+| REQ-AUTH-014 | The system must reject any Admin operation that would deactivate or demote the last remaining active Admin. | Operational safety; ADR-0006 | Must |
+| REQ-AUTH-015 | The first Admin is created by a one-time runtime env bootstrap that runs only when zero Admin accounts exist. | OQ-AUTH-002 / ADR-0006 | Must |
 
 ## Acceptance Criteria
 
@@ -78,17 +81,21 @@ The source product specification defines phase-one password authentication with 
 | AC-AUTH-002 | Password values, password hashes, JWT values, and `Authorization` headers are absent from response bodies, structured errors, and test-captured logs. |
 | AC-AUTH-003 | An Admin can create one account in each role, list them, deactivate one, reactivate it, and assign a different role. |
 | AC-AUTH-004 | A Viewer and Editor cannot call Admin-only user-management endpoints; the API returns a consistent forbidden response. |
-| AC-AUTH-005 | A token issued before deactivation is rejected immediately after deactivation; a role update is reflected on the next protected request. |
+| AC-AUTH-005 | A token issued before deactivation is rejected immediately after deactivation; a role update is reflected on the next protected request; tokens remain invalid after reactivation until a new login. |
 | AC-AUTH-006 | The current-user response contains only safe identity fields and exactly one role; it never contains a password hash, token secret, or provider credential. |
 | AC-AUTH-007 | The `external_subject` field is nullable and does not require an SSO integration or external network call. |
 | AC-AUTH-008 | Login/session UI builds successfully, restores a valid session, handles `401`/`403` safely, and removes the local token on logout. |
+| AC-AUTH-009 | Attempting to deactivate or demote the last active Admin fails with a typed validation/conflict error and leaves that Admin unchanged. |
+| AC-AUTH-010 | Bootstrap env vars create exactly one Admin when none exist and are ignored once any Admin exists. |
 
 ## Open Questions
 
 | ID | Question | Proposed default pending owner confirmation | Impact |
 |---|---|---|---|
 | OQ-AUTH-001 | What is the pilot password policy? | Minimum 12 characters; no forced complexity regex; reject blank/whitespace-only values. | Validation and onboarding UX |
-| OQ-AUTH-002 | How is the first Admin bootstrapped? | A one-time environment-provided bootstrap credential or documented migration seed, never a committed default. | First-run operability and secret handling |
+| OQ-AUTH-002 | How is the first Admin bootstrapped? | One-time startup bootstrap from runtime env vars `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER`, `AUTH_BOOTSTRAP_ADMIN_PASSWORD`, and optional `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME`. Runs only when zero Admin accounts exist; never uses a committed default password; ignored after any Admin exists. | First-run operability and secret handling |
 | OQ-AUTH-003 | How long should access JWTs live? | 30-minute access token; no refresh token in this slice. | Session UX and security posture |
-| OQ-AUTH-004 | Where should the browser hold the access token? | In-memory state with session storage as the reload fallback; never localStorage. | Reload behavior and XSS exposure |
-| OQ-AUTH-005 | What account identifier normalization is required? | Trim and lowercase for lookup/uniqueness; preserve display name separately; passwords remain case-sensitive. | Login and uniqueness behavior |
+| OQ-AUTH-004 | Where should the browser hold the access token? | In-memory state with `sessionStorage` as the reload fallback; never `localStorage`. | Reload behavior and XSS exposure |
+| OQ-AUTH-005 | What account identifier normalization is required? | Trim and lowercase for lookup/uniqueness; length 3–64; allowed pattern `[a-z0-9._@-]+` after normalization; preserve display name separately; passwords remain case-sensitive. | Login and uniqueness behavior |
+
+These open questions are also captured as proposed defaults in ADR-0006. Owner/security acceptance of ADR-0006 (or an amended ADR) closes them for implementation handoff.

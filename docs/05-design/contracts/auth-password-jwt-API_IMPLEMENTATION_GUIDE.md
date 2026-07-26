@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Slice | `auth-password-jwt` |
-| Status | Draft; requires owner/security confirmation of listed defaults |
+| Status | Draft; requires owner/security acceptance of ADR-0006 / OQ-AUTH defaults |
 | Base path | `/api/v1` |
 | Backend | FastAPI + PostgreSQL + Alembic |
 | Auth model | Public login plus bearer JWT for active-user/business routes |
@@ -11,7 +11,7 @@
 
 ## Overview
 
-This guide defines the HTTP contract for local password login, current-user resolution, and Admin account management. It preserves the P0 response envelope and never exposes password hashes, JWT secrets, provider credentials, or raw bearer tokens.
+This guide defines the HTTP contract for local password login, current-user resolution, and Admin account management. It preserves the P0 response envelope and never exposes password hashes, JWT secrets, provider credentials, `external_subject`, `auth_version`, or raw bearer tokens.
 
 ## Authentication
 
@@ -21,7 +21,7 @@ This guide defines the HTTP contract for local password login, current-user reso
 |---|---|
 | `POST /auth/login` | Public credentials endpoint. |
 | `GET /health/live`, `GET /health/ready` | Explicit infrastructure exception from ADR-0005. |
-| `GET /auth/me` | Valid active bearer JWT. |
+| `GET /auth/me` | Valid active bearer JWT with matching `auth_version`. |
 | `/admin/users*` | Valid active bearer JWT with current role `Admin`. |
 | Future business routes | Valid active bearer JWT plus route-specific current role. |
 
@@ -40,10 +40,28 @@ The server must not echo or log the header value.
 | `sub` | Yes | Internal `user_id`. |
 | `iat` | Yes | Issue time. |
 | `exp` | Yes | Expiry time. |
-| `auth_version` | Yes | Reject tokens invalidated by account status changes. |
+| `auth_version` | Yes | Mandatory invalidation claim; must match current User row. |
 | `role` | No | Display convenience only; never authorization source of truth. |
 
-Proposed defaults: 30-minute expiry, HS256 runtime secret, no refresh token. These are pending confirmation.
+Proposed defaults (ADR-0006): 30-minute expiry, HS256 runtime secret, no refresh token. Pending owner/security acceptance.
+
+## Shared `UserSummary`
+
+All user projections use the same allowlisted shape:
+
+```json
+{
+  "user_id": "<uuid>",
+  "identifier": "alice",
+  "display_name": "Alice",
+  "role": "Viewer",
+  "status": "active",
+  "created_at": "2026-07-26T10:00:00Z",
+  "updated_at": "2026-07-26T10:00:00Z"
+}
+```
+
+Never include `password_hash`, `external_subject`, `auth_version`, JWT values, or secret settings.
 
 ## Error Response Format
 
@@ -62,22 +80,23 @@ Proposed defaults: 30-minute expiry, HS256 runtime secret, no refresh token. The
 | Code | Status | Safe message intent |
 |---|---:|---|
 | `AUTHENTICATION_FAILED` | 401 | Do not distinguish unknown, wrong, or inactive credentials at login. |
-| `TOKEN_INVALID` | 401 | Token is missing, malformed, expired, or unverifiable. |
-| `ACCOUNT_INACTIVE` | 401 | Current account cannot use the token. |
+| `TOKEN_INVALID` | 401 | Token is missing, malformed, expired, unverifiable, or subject unknown. |
+| `ACCOUNT_INACTIVE` | 401 | Current account is deactivated or token `auth_version` mismatches. |
 | `FORBIDDEN` | 403 | Current role cannot perform the operation. |
 | `ACCOUNT_CONFLICT` | 409 | Normalized identifier already exists. |
+| `LAST_ADMIN_REQUIRED` | 409 | Operation would deactivate or demote the last active Admin. |
 | `VALIDATION_ERROR` | 422 | Request field validation failed. |
 | `USER_NOT_FOUND` | 404 | Admin target does not exist. |
 
 ## API Endpoints Summary
 
-| Operation | Method | Endpoint | Auth |
-|---|---|---|---|
-| Login | POST | `/auth/login` | Public |
-| Current user | GET | `/auth/me` | Active user |
-| List users | GET | `/admin/users` | Admin |
-| Create user | POST | `/admin/users` | Admin |
-| Update user | PATCH | `/admin/users/{user_id}` | Admin |
+| Operation | Method | Endpoint | Auth | Success |
+|---|---|---|---|---:|
+| Login | POST | `/auth/login` | Public | 200 |
+| Current user | GET | `/auth/me` | Active user | 200 |
+| List users | GET | `/admin/users` | Admin | 200 |
+| Create user | POST | `/admin/users` | Admin | 201 |
+| Update user | PATCH | `/admin/users/{user_id}` | Admin | 200 |
 
 ## Endpoint Reference
 
@@ -108,7 +127,9 @@ Success response, HTTP 200:
       "identifier": "alice",
       "display_name": "Alice",
       "role": "Viewer",
-      "status": "active"
+      "status": "active",
+      "created_at": "2026-07-26T10:00:00Z",
+      "updated_at": "2026-07-26T10:00:00Z"
     }
   },
   "error": null,
@@ -118,9 +139,9 @@ Success response, HTTP 200:
 
 Validation/error cases:
 
-- `422 VALIDATION_ERROR` for missing/empty fields or failed password policy input.
+- `422 VALIDATION_ERROR` for missing/empty fields, identifier rule failures, or failed password policy input.
 - `401 AUTHENTICATION_FAILED` for unknown, wrong, or inactive credentials.
-- Never return password hash, raw password, or token diagnostics.
+- Never return password hash, raw password, `auth_version`, or token diagnostics.
 
 ### Current user
 
@@ -128,19 +149,12 @@ Validation/error cases:
 
 Request header: bearer token.
 
-Success `data`:
+Success `data`: `UserSummary`.
 
-```json
-{
-  "user_id": "<uuid>",
-  "identifier": "alice",
-  "display_name": "Alice",
-  "role": "Viewer",
-  "status": "active"
-}
-```
+Errors:
 
-Errors: `401 TOKEN_INVALID` or `401 ACCOUNT_INACTIVE`.
+- `401 TOKEN_INVALID` for missing/malformed/expired/unverifiable/unknown-subject tokens.
+- `401 ACCOUNT_INACTIVE` for deactivated accounts or `auth_version` mismatch.
 
 ### List users
 
@@ -166,7 +180,9 @@ Success `data`:
 }
 ```
 
-The response must not include password hash, `external_subject`, auth version, JWT, or secret settings.
+Bounded list only: maximum 200 items. No pagination query parameters in this slice.
+
+The response must not include password hash, `external_subject`, `auth_version`, JWT, or secret settings.
 
 ### Create user
 
@@ -183,7 +199,7 @@ Request:
 }
 ```
 
-Success: HTTP 201 with the safe user projection; no credential is returned.
+Success: HTTP 201 with `UserSummary` in `data`; no credential is returned.
 
 Errors: `401`, `403`, `409 ACCOUNT_CONFLICT`, or `422 VALIDATION_ERROR`.
 
@@ -203,11 +219,11 @@ Request:
 
 At least one mutable field is required. Password change is intentionally not supported by this endpoint.
 
-Success: HTTP 200 with safe user projection.
+Success: HTTP 200 with `UserSummary`.
 
-Errors: `401`, `403`, `404 USER_NOT_FOUND`, or `422 VALIDATION_ERROR`.
+Errors: `401`, `403`, `404 USER_NOT_FOUND`, `409 LAST_ADMIN_REQUIRED`, or `422 VALIDATION_ERROR`.
 
-Deactivation must increment auth version and cause existing tokens to fail on their next protected request.
+Deactivation must increment `auth_version` and cause existing tokens to fail on their next protected request. Reactivation must not restore pre-deactivation tokens.
 
 ## State Reference
 
@@ -215,18 +231,32 @@ Deactivation must increment auth version and cause existing tokens to fail on th
 active ── Admin deactivate ──► deactivated
 active ◄─ Admin reactivate ─── deactivated
 role: Admin | Editor | Viewer (one current value)
+constraint: at least one active Admin must remain
 ```
+
+## Bootstrap Contract
+
+Runtime env vars (never committed with real secrets):
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER` | Yes when bootstrapping | First Admin identifier |
+| `AUTH_BOOTSTRAP_ADMIN_PASSWORD` | Yes when bootstrapping | First Admin password |
+| `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME` | No | Display name; default derived from identifier |
+
+Bootstrap runs only when zero Admin accounts exist and creates exactly one active Admin.
 
 ## Concurrency
 
 - User updates are transactional.
 - Duplicate identifiers are handled as a stable `409` conflict.
-- If optimistic versioning is needed for concurrent Admin edits, use the user `updated_at`/version precondition rather than silently overwriting; the initial pilot may serialize by transaction.
-- Authorization reads current role/status after the token is validated.
+- Concurrent Admin edits rely on transaction serialization for the pilot; no client precondition header is required in this slice.
+- Authorization reads current role/status/`auth_version` after the token is validated.
 
 ## Integration Dependencies
 
 - PostgreSQL user table and Alembic migration from `20260726_0001`.
-- Runtime JWT key and algorithm settings.
-- Maintained password hashing adapter.
+- Runtime JWT key and HS256 algorithm settings.
+- Argon2id password hashing adapter.
 - P0 envelope and redaction behavior.
+- Proposed ADR-0006 pilot auth security defaults.

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design turns the approved `auth-password-jwt` behavior into implementation-facing module, data, API, UI, and verification boundaries. It extends the verified P0 foundation; it does not implement code in this document-generation session.
+This design turns the `auth-password-jwt` behavior into implementation-facing module, data, API, UI, and verification boundaries. It extends the verified P0 foundation; it does not implement code in this document-remediation session.
 
 ## Source Architecture
 
@@ -10,7 +10,7 @@ This design turns the approved `auth-password-jwt` behavior into implementation-
 - `docs/04-architecture/auth-password-jwt-data-flow.md`
 - `docs/04-architecture/auth-password-jwt-data-model.md`
 - `docs/03-spec/auth-password-jwt-spec.md`
-- ADR-0002 and ADR-0005
+- ADR-0002, ADR-0005, and proposed ADR-0006
 
 ## Grounding Evidence From P0
 
@@ -29,13 +29,16 @@ No existing User model, auth router, password adapter, JWT signer, or business m
 ## Design Assumptions
 
 - `[DEFAULT]` Use an internal UUID user ID.
-- `[DEFAULT]` Use an access JWT with `sub`, `iat`, `exp`, and `auth_version`; current role/status are loaded from PostgreSQL for authorization.
+- `[DEFAULT]` Use an access JWT with `sub`, `iat`, `exp`, and mandatory `auth_version`; current role/status are loaded from PostgreSQL for authorization.
 - `[DEFAULT]` Use HS256 with a runtime secret for the single-host pilot; do not expose the secret through settings APIs.
 - `[DEFAULT]` Use 30-minute access-token lifetime and no refresh-token endpoint.
-- `[DEFAULT]` Store the browser token in memory with session storage fallback; never localStorage.
+- `[DEFAULT]` Store the browser token in memory with `sessionStorage` fallback; never `localStorage`.
 - `[DEFAULT]` Admin supplies an initial password when creating an account; password reset is out of scope.
+- `[DEFAULT]` Password hashing uses Argon2id.
+- `[DEFAULT]` First Admin is created from `AUTH_BOOTSTRAP_ADMIN_*` env vars only when zero Admins exist.
+- `[DEFAULT]` Last active Admin cannot be deactivated or demoted.
 
-These defaults require owner/security confirmation before implementation handoff.
+These defaults are recorded in proposed ADR-0006 and require owner/security confirmation before implementation handoff.
 
 ## Design Scope
 
@@ -44,6 +47,7 @@ These defaults require owner/security confirmation before implementation handoff
 - Authentication API and request/response models.
 - Account administration API and safe user projections.
 - Authentication and authorization service layer.
+- First-Admin bootstrap path at startup.
 - User repository and transaction boundary.
 - Password and JWT adapter boundaries.
 - Frontend session store, login view, route guard, and Admin user view.
@@ -65,19 +69,28 @@ No business content routes, audit persistence, SSO, password recovery, provider 
 ### Current-user and authorization dependency
 
 - Read the bearer token from the `Authorization` header.
-- Verify signature, algorithm, expiry, subject, and auth version.
+- Verify signature, algorithm, expiry, subject, and `auth_version`.
 - Load the current User row by internal ID.
-- Reject missing/inactive/version-mismatched users with `401`.
+- Reject missing subjects with `401 TOKEN_INVALID`.
+- Reject inactive or version-mismatched users with `401 ACCOUNT_INACTIVE`.
 - Return an internal authenticated-user context containing `user_id` and current role.
 - Role checks compare the current database role to the required role set.
+
+### First-Admin bootstrap
+
+- On startup, if zero Admin accounts exist and bootstrap env vars are present, create one active Admin.
+- Validate password policy before create; fail closed on invalid bootstrap password.
+- If any Admin already exists, ignore bootstrap env vars.
+- Never commit default bootstrap passwords.
 
 ### Account administration service
 
 - Create: normalize identifier, validate password/role, hash password, create active User transactionally.
-- List: return an allowlisted safe projection; never serialize ORM User directly.
+- List: return a bounded list (maximum 200 items) of `UserSummary` projections; no pagination in this slice.
 - Update: permit display name, role, and status changes under an Admin check; update timestamps atomically.
 - Deactivate: set status/time and increment `auth_version`.
 - Reactivate: set active status, clear deactivation time, and keep pre-change tokens invalid through the incremented version.
+- Last-Admin guard: reject deactivate/demote when it would leave zero active Admins (`409 LAST_ADMIN_REQUIRED`).
 - No delete operation is included; deactivation is the v0.1 lifecycle control.
 
 ### Repository boundary
@@ -90,14 +103,14 @@ No business content routes, audit persistence, SSO, password recovery, provider 
 
 - `hash(plaintext) -> password_hash`
 - `verify(plaintext, password_hash) -> bool`
-- Use a maintained password-hashing library; exact library/work factor must be recorded in implementation dependency review.
+- Use Argon2id through a maintained password-hashing library; pin the dependency version in implementation review.
 - Treat malformed hashes as verification failure, not an internal error containing the hash.
 
 ### JWT adapter
 
 - `issue(user_id, auth_version, now, expiry) -> encoded_token`
 - `verify(encoded_token, now) -> token_claims`
-- Reject algorithm confusion, invalid signature, missing subject, invalid timestamps, and expired token.
+- Reject algorithm confusion, invalid signature, missing subject, missing/invalid `auth_version`, invalid timestamps, and expired token.
 - Never log the encoded token or raw authorization header.
 
 ## API / Interface Design
@@ -119,35 +132,37 @@ Errors preserve `success=false`, safe `data` when useful, typed `error.code`, sa
 
 ### Endpoint set
 
-| Method | Path | Auth | Purpose |
-|---|---|---|---|
-| POST | `/api/v1/auth/login` | Public | Issue access token. |
-| GET | `/api/v1/auth/me` | Active user | Return safe current-user projection. |
-| GET | `/api/v1/admin/users` | Admin | List safe users. |
-| POST | `/api/v1/admin/users` | Admin | Create active user. |
-| PATCH | `/api/v1/admin/users/{user_id}` | Admin | Change display name, role, or active status. |
-| GET | `/api/v1/health/live` | Infrastructure exception | Existing liveness probe. |
-| GET | `/api/v1/health/ready` | Infrastructure exception | Existing readiness probe. |
+| Method | Path | Auth | Success status | Purpose |
+|---|---|---|---:|---|
+| POST | `/api/v1/auth/login` | Public | 200 | Issue access token. |
+| GET | `/api/v1/auth/me` | Active user | 200 | Return `UserSummary`. |
+| GET | `/api/v1/admin/users` | Admin | 200 | List safe users (bounded, max 200). |
+| POST | `/api/v1/admin/users` | Admin | 201 | Create an account. |
+| PATCH | `/api/v1/admin/users/{user_id}` | Admin | 200 | Change display name, role, or active status. |
+| GET | `/api/v1/health/live` | Infrastructure exception | 200 | Existing liveness probe. |
+| GET | `/api/v1/health/ready` | Infrastructure exception | 200/503 | Existing readiness probe. |
 
 ### Request and response decisions
 
 - Login request: `identifier`, `password`.
-- Login response: `access_token`, `token_type="bearer"`, `expires_at`, `user` safe projection.
+- Login response: `access_token`, `token_type="bearer"`, `expires_at`, `user` as `UserSummary`.
 - User create request: `identifier`, `display_name`, `password`, `role`.
 - User update request: optional `display_name`, `role`, `status`; at least one field required.
-- User list response: safe user projections with pagination metadata if the implementation uses pagination; the initial pilot may return a bounded list.
-- No endpoint accepts or returns `external_subject` in the phase-one Admin UI.
+- User list response: `{ "items": UserSummary[] }` with at most 200 items; no pagination metadata in this slice.
+- Shared `UserSummary`: `user_id`, `identifier`, `display_name`, `role`, `status`, `created_at`, `updated_at`.
+- No endpoint accepts or returns `external_subject`, `password_hash`, or `auth_version` in phase one.
 
 ### Authorization and error mapping
 
 | Condition | Status | Code |
 |---|---:|---|
-| Missing/malformed/expired token | 401 | `TOKEN_INVALID` |
+| Missing/malformed/expired/unknown-subject token | 401 | `TOKEN_INVALID` |
 | Inactive user or auth-version mismatch | 401 | `ACCOUNT_INACTIVE` |
 | Invalid login | 401 | `AUTHENTICATION_FAILED` |
 | Non-Admin calling Admin endpoint | 403 | `FORBIDDEN` |
 | Duplicate normalized identifier | 409 | `ACCOUNT_CONFLICT` |
-| Invalid role/password/field | 422 | `VALIDATION_ERROR` |
+| Last-Admin demotion/deactivation | 409 | `LAST_ADMIN_REQUIRED` |
+| Invalid role/password/field/identifier | 422 | `VALIDATION_ERROR` |
 | Target user absent | 404 | `USER_NOT_FOUND` |
 
 ## Data Design
@@ -159,13 +174,15 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 - Account creation commits User row and hash together.
 - Status/role changes commit as one transaction.
 - Duplicate identifiers map to a stable conflict response.
-- User list reads use a safe projection, not full entity serialization.
+- User list reads use the shared `UserSummary` projection, not full entity serialization.
+- Last-Admin checks occur inside the same transaction as the mutation.
 
 ### Token invalidation rules
 
 - Deactivation increments `auth_version` and sets status deactivated.
-- A protected request rejects a token whose auth version differs from the current User row.
+- A protected request rejects a token whose `auth_version` differs from the current User row.
 - Reactivation does not restore pre-deactivation tokens.
+- `auth_version` validation is mandatory, not optional.
 
 ## UI / User Flow Design
 
@@ -173,7 +190,7 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 
 - Fields: account identifier and password.
 - States: idle, submitting, authenticated, generic authentication error, API unavailable.
-- On success: store session, fetch current user, route to authenticated shell.
+- On success: store session in memory/`sessionStorage`, fetch current user, route to authenticated shell.
 - On `401`: show generic credentials error and clear any partial session.
 - Password field is never included in telemetry or client logs.
 
@@ -187,10 +204,11 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 ### Admin user view
 
 - Visible only to Admin users, but API remains authoritative.
-- Lists identifier, display name, role, status, and timestamps.
+- Lists identifier, display name, role, status, and timestamps from `UserSummary`.
 - Create form requires identifier, display name, initial password, and one role.
 - Edit form changes display name, role, or status; destructive deactivation requires confirmation.
-- No password hash, token, external subject, or provider credential is shown.
+- Surface `LAST_ADMIN_REQUIRED` as a non-destructive error.
+- No password hash, token, external subject, auth version, or provider credential is shown.
 
 ## Workflow / Execution Design
 
@@ -201,22 +219,22 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 3. Load user.
 4. Verify password hash with constant-time adapter behavior.
 5. Check status.
-6. Issue JWT.
-7. Return safe projection.
+6. Issue JWT with current `auth_version`.
+7. Return `UserSummary`.
 
 ### Protected request sequence
 
 1. Parse bearer header.
-2. Verify JWT.
+2. Verify JWT including `auth_version` claim presence.
 3. Load current user.
-4. Check status and auth version.
+4. Check status and `auth_version` match.
 5. Check current role when required.
 6. Execute the future use case.
 
 ## Integration Design
 
 - PostgreSQL: local repository connection only; no external network calls.
-- Password adapter: local library boundary; no provider SDK leakage into services.
+- Password adapter: local Argon2id library boundary; no provider SDK leakage into services.
 - JWT adapter: local signing boundary; key loaded from runtime configuration.
 - SSO: deferred adapter boundary, no implementation or network call.
 
@@ -227,16 +245,19 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 - Do not return ORM objects directly.
 - Enforce role checks server-side.
 - Reject deactivated/version-mismatched sessions immediately.
+- Enforce last-Admin protection server-side.
 - Do not create audit persistence here; later `audit-minimal` must record account operations without secrets.
+- Login rate limiting is deferred for the intranet pilot.
 
 ## Validation and Error Handling
 
-- Empty/whitespace identifier: `422 VALIDATION_ERROR`.
+- Empty/whitespace identifier or identifier outside 3–64 / pattern rules: `422 VALIDATION_ERROR`.
 - Invalid role: `422 VALIDATION_ERROR`.
 - Password below approved minimum: `422 VALIDATION_ERROR`.
 - Duplicate identifier: `409 ACCOUNT_CONFLICT`.
+- Last-Admin violation: `409 LAST_ADMIN_REQUIRED`.
 - Invalid login: `401 AUTHENTICATION_FAILED` with generic message.
-- Invalid token: `401 TOKEN_INVALID`; do not echo token.
+- Invalid/unknown-subject token: `401 TOKEN_INVALID`; do not echo token.
 - Inactive/version-mismatched account: `401 ACCOUNT_INACTIVE`.
 - Insufficient role: `403 FORBIDDEN`.
 - Database failure: safe `5xx` envelope; no connection string, SQL, hash, or token in message.
@@ -249,23 +270,25 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 4. A malformed stored password hash: login fails generically and does not expose the hash.
 5. A missing JWT key outside local mode: application/auth readiness fails closed; no token is issued.
 6. Health probe request without a bearer token: remains allowed under ADR-0005 and is not treated as business-route bypass.
+7. Reactivation after deactivation: old tokens remain invalid because `auth_version` advanced.
+8. Attempt to demote/deactivate the sole active Admin: rejected with `LAST_ADMIN_REQUIRED`.
 
 ## Testing Considerations
 
 - Unit tests for password adapter, JWT claims/expiry/version, normalization, and safe projections.
-- API tests for login success/failure, current user, Admin CRUD lifecycle, `401`, `403`, conflict, and validation responses.
+- API tests for login success/failure, current user, Admin CRUD lifecycle, last-Admin guard, bootstrap-once, `401`, `403`, conflict, and validation responses.
 - Integration tests for migration upgrade/reapply and user uniqueness/status/role persistence.
 - Security tests for log/response redaction and no secret-shaped values.
-- Frontend tests/build for login states, session restore, logout, `401`, and `403` mapping.
-- Compose smoke with seeded or documented first-Admin path, without real company documents or external identity services.
+- Frontend tests/build for login states, session restore, logout, Admin UI, `401`, and `403` mapping.
+- Compose smoke with env bootstrap first-Admin path, without real company documents or external identity services.
 
 ## Risks / Design Tradeoffs
 
 - A database lookup on each protected request provides immediate deactivation/role effect at the cost of one indexed read; this is preferred for pilot correctness.
 - No refresh token reduces surface area but requires re-login after access-token expiry.
-- Admin-supplied initial passwords are operationally simple but require a secure bootstrap/runbook; confirm before implementation.
+- Env-based first-Admin bootstrap is operationally explicit and avoids committed secrets; operators must remove bootstrap secrets after first success.
+- Bounded list (max 200) avoids pagination complexity for a ~60-user department.
 
 ## Open Questions
 
-- Resolve OQ-AUTH-001 through OQ-AUTH-005 and record accepted defaults before implementation.
-- Decide whether the JWT algorithm/key rotation policy requires a new security ADR or is accepted under ADR-0002 for the pilot.
+- Resolve OQ-AUTH-001 through OQ-AUTH-005 by accepting or amending ADR-0006 before implementation.
