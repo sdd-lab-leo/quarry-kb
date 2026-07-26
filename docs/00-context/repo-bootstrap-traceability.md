@@ -6,8 +6,8 @@
 |---|---|
 | Slice | `repo-bootstrap` |
 | Goal | Start and verify the FastAPI/Vue/PostgreSQL foundation with safe gateway boundaries. |
-| Status | Draft — awaiting product-owner acceptance after independent review remediation |
-| Implementation boundary | No application code until this SDD set is accepted and a hand-off manifest/freshness gate exists. |
+| Status | Implemented in workspace — awaiting product-owner acceptance for P0/P1 stage completion |
+| Implementation boundary | Code applied under change package `docs/00-context/changes/20260726-repo-bootstrap/` after freshness-gate pass. |
 
 ## Source → Requirement Mapping
 
@@ -85,8 +85,11 @@
 - [x] First implementation slice has a complete draft SDD chain.
 - [x] Independent document review findings remediated (readiness contract, allowlist rule, SEC-01 exception, traceability mappings, slice-order alignment).
 - [x] Remediation review recorded in `docs/reviews/repo-bootstrap-sdd-quality.md`.
+- [x] Execution manifest + freshness-gate evidence recorded in `docs/00-context/changes/20260726-repo-bootstrap/`.
+- [x] Dockerless implementation verification passed (pytest, frontend build, compose YAML parse, local health smoke).
 - [ ] Product owner accepts v0.1 scope and this slice.
-- [ ] Implementation hand-off manifest and freshness gate are created after slice acceptance.
+- [ ] Docker/Postgres Compose migration smoke in a Docker-capable environment.
+- [ ] P0/P1 stage gates marked complete only after owner acceptance + runtime smoke.
 
 ## Scope Boundary
 

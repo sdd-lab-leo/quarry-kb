@@ -28,22 +28,19 @@ Quarry KB is greenfield. It does not fork WeKnora. Atlas Knowledge Hub is a diff
 
 Non-trivial or user-facing changes must update the SDD chain before implementation. No approved slice means no feature code.
 
-## Intended Stack (documented, not scaffolded yet)
+## Stack
 
 - Frontend: Vue 3 + Vite + TypeScript + Pinia (`frontend/`)
 - Backend: FastAPI (`backend/`)
 - Data: PostgreSQL + pgvector
 - Uploads: local disk via Docker volume (not in Git)
-- Auth: phase 1 account/password + JWT; phase 2 company SSO with reserved `external_subject`
-- Roles: Admin | Editor | Viewer
+- Auth: deferred to `auth-password-jwt` (not in `repo-bootstrap`)
 - Runtime: Docker Compose (`web` + `api` + `postgres`) under `deploy/`
 
 ## Repository Layout
 
 ```text
 .agents/skills/          Canonical SDD / Agentic SDLC skills
-.claude/skills/          Claude Code mirror of skills
-.opencode/commands/      OpenCode /sdd router
 docs/00-context/         Durable context, profile, registry, ADRs, hand-off
 docs/01-requirements/    Requirements slices
 docs/02-user-stories/    User stories
@@ -51,14 +48,10 @@ docs/03-spec/            Specifications
 docs/04-architecture/    Architecture / data flow / data model
 docs/05-design/          Design + API contracts
 docs/06-tasks/           Implementation tasks
-docs/07-prompts/         Prompt notes
-docs/reviews/            Review reports
-docs/standards/          Frontend / backend development standards
-docs/lessons/            Inherited + observed lessons
-frontend/                Vue 3 app (placeholder)
-backend/                 FastAPI app (placeholder)
-deploy/                  Compose / deploy assets (placeholder)
-samples/input|output     Mock samples only
+frontend/                Vue 3 foundation shell
+backend/                 FastAPI foundation + Alembic baseline
+deploy/                  Compose topology
+samples/                 Mock samples only
 ```
 
 ## Samples Policy
@@ -67,21 +60,51 @@ samples/input|output     Mock samples only
 
 Do **not** place real company documents, internal screenshots, secrets, production exports, or personal data here.
 
-## Local Startup (placeholder)
+## Local Startup (`repo-bootstrap`)
 
-Application scaffolding is intentionally not part of Step 1. Intended later flow:
+1. Copy `.env.example` to an untracked `.env` and adjust only local placeholders.
+2. Start the foundation:
 
 ```sh
-# after backend/frontend/deploy scaffolding exists
 docker compose -f deploy/docker-compose.yml up --build
 ```
 
-Or separately:
+3. Open `http://localhost:8080` for the Vue shell. It calls `GET /api/v1/health/ready` through the web proxy.
+
+### Separate local processes
 
 ```sh
-cd backend && uvicorn app.main:app --reload
-cd frontend && npm install && npm run dev
+# Backend
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
+
+# Frontend
+cd frontend
+npm install --no-package-lock
+npm run dev
 ```
+
+### Verification
+
+```sh
+python3 scripts/validate_execution_manifest.py docs/00-context/changes/20260726-repo-bootstrap/manifest.yaml
+git diff --check
+cd backend && .venv/bin/python -m pytest
+cd frontend && npm run build
+python3 -c "import yaml; yaml.safe_load(open('deploy/docker-compose.yml')); print('compose yaml OK')"
+# optional when Docker is available:
+docker compose -f deploy/docker-compose.yml config
+```
+
+### Open risks still tracked in SDD
+
+- `OQ-BOOT-02`: PostgreSQL/pgvector image tag used in Compose is a development pin (`pgvector/pgvector:0.8.0-pg16`), not a pilot-approved tag.
+- `OQ-BOOT-01`: probe management port undecided; API remains on the Compose network.
+- `OQ-09`: concrete gateway URLs/models unresolved; placeholders only.
 
 ## Language
 

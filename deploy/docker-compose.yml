@@ -1,0 +1,64 @@
+# Local foundation topology for repo-bootstrap.
+# PostgreSQL/pgvector image tag is a development pin (OQ-BOOT-02 still open for pilot approval).
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-quarry}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+      POSTGRES_DB: ${POSTGRES_DB:-quarry_kb}
+    volumes:
+      - quarry_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - quarry_net
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://quarry:change-me-local-only@postgres:5432/quarry_kb}
+      UPLOAD_ROOT: ${UPLOAD_ROOT:-/data/uploads}
+      GATEWAY_HOST_ALLOWLIST: ${GATEWAY_HOST_ALLOWLIST:-gateway.internal}
+      CHAT_BASE_URL: ${CHAT_BASE_URL:-http://gateway.internal/v1}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-http://gateway.internal/v1}
+      OCR_BASE_URL: ${OCR_BASE_URL:-http://gateway.internal/v1}
+    volumes:
+      - quarry_uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/live')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - quarry_net
+    # API is on the Compose network for web/proxy and healthchecks.
+    # Not published as a public business route by default.
+
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+    networks:
+      - quarry_net
+
+volumes:
+  quarry_pg_data:
+  quarry_uploads:
+
+networks:
+  quarry_net:
+    driver: bridge

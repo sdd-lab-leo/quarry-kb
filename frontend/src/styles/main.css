@@ -1,0 +1,138 @@
+:root {
+  --bg-0: #10231c;
+  --bg-1: #1b3a2f;
+  --bg-2: #245042;
+  --ink: #f3f7f4;
+  --muted: #b7c9c0;
+  --accent: #d0a85c;
+  --ok: #7dcea0;
+  --warn: #e2b657;
+  --bad: #e07a5f;
+  --panel: rgba(16, 35, 28, 0.55);
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-body: "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(208, 168, 92, 0.18), transparent 40%),
+    radial-gradient(circle at 85% 10%, rgba(125, 206, 160, 0.12), transparent 35%),
+    linear-gradient(160deg, var(--bg-0), var(--bg-1) 45%, var(--bg-2));
+}
+
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.header {
+  padding: 1.5rem 2rem 0.5rem;
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.tagline {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+
+.main {
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+}
+
+.status-panel {
+  width: min(40rem, 100%);
+  padding: 1.75rem;
+  background: var(--panel);
+  border: 1px solid rgba(243, 247, 244, 0.12);
+  backdrop-filter: blur(6px);
+}
+
+.status-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.status-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  margin: 0 0 0.75rem;
+}
+
+.status-title.ready {
+  color: var(--ok);
+}
+
+.status-title.needs_attention {
+  color: var(--warn);
+}
+
+.status-title.unreachable,
+.status-title.loading {
+  color: var(--accent);
+}
+
+.message {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.components {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.components li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0;
+  border-top: 1px solid rgba(243, 247, 244, 0.08);
+}
+
+.actions {
+  margin-top: 1.25rem;
+}
+
+button {
+  appearance: none;
+  border: 1px solid rgba(243, 247, 244, 0.25);
+  background: transparent;
+  color: var(--ink);
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

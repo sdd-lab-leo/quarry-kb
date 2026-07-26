@@ -1,0 +1,155 @@
+# yaml-language-server: $schema=../../execution-manifest.schema.json
+manifest_schema_version: "1.0"
+manifest_id: 20260726-repo-bootstrap
+created_at: 2026-07-26T04:09:56Z
+created_by: cloud-agent
+status: archived
+
+workspace:
+  project_name: quarry-kb
+  repo_path: /workspace
+  repo_url: https://github.com/sdd-lab-leo/quarry-kb
+  branch: cursor/fix-p0-review-findings-f870
+  commit_sha: 09217106cd48280d71ca01452dc178893fa73662
+
+task:
+  title: Implement repo-bootstrap foundation
+  objective: >
+    Implement the approved repo-bootstrap slice so a clean checkout can start
+    web/api/postgres, apply the Alembic/pgvector baseline, expose truthful
+    liveness/readiness, and render a Vue shell health state without live
+    gateway credentials, business features, or real secrets.
+  mode: code-change
+  sdd_profile: quarry-kb-fastapi-vue
+
+out_of_scope:
+  - Authentication, JWT, roles, account lifecycle
+  - Document upload, parsing, OCR execution, embeddings
+  - Retrieval, RAG, chat, provider CRUD
+  - Audit records and business tables
+  - Live model-gateway or paid-provider calls
+  - Real company documents, screenshots, runtime logs, upload corpora
+  - Java/Spring/Oracle or unapproved UI frameworks
+  - Git commit, push, or pull-request creation unless explicitly requested
+
+inputs:
+  source_references:
+    - type: local-file
+      ref: docs/06-tasks/repo-bootstrap-tasks.md
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+      notes: Primary task breakdown for apply
+  documents:
+    - path: docs/03-spec/repo-bootstrap-spec.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/06-tasks/repo-bootstrap-tasks.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/04-architecture/repo-bootstrap-architecture.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/04-architecture/repo-bootstrap-data-flow.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/04-architecture/repo-bootstrap-data-model.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/05-design/repo-bootstrap-design.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/05-design/contracts/repo-bootstrap-API_IMPLEMENTATION_GUIDE.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/00-context/repo-bootstrap-traceability.md
+      required: true
+      version: "09217106cd48280d71ca01452dc178893fa73662"
+    - path: docs/standards/backend.md
+      required: true
+      version: null
+    - path: docs/standards/frontend.md
+      required: true
+      version: null
+  adrs:
+    - path: docs/00-context/decisions/ADR-0002-lock-technology-stack-and-auth-evolution.md
+      required: true
+    - path: docs/00-context/decisions/ADR-0004-gateway-contract-and-data-egress-boundaries.md
+      required: true
+    - path: docs/00-context/decisions/ADR-0005-bootstrap-probe-allowlist-and-readiness-contract.md
+      required: true
+
+constraints:
+  allowed_paths:
+    - backend/
+    - frontend/
+    - deploy/
+    - docs/
+    - samples/
+    - scripts/
+    - README.md
+    - .env.example
+    - .gitignore
+  forbidden_paths:
+    - .env
+    - secrets/
+    - credentials/
+    - data/
+    - uploads/
+    - backend/data/
+    - backend/uploads/
+  external_actions_require_approval: true
+  standards_refs:
+    - docs/standards/frontend.md
+    - docs/standards/backend.md
+
+outputs:
+  expected_artifacts:
+    - path: deploy/docker-compose.yml
+      kind: compose
+    - path: .env.example
+      kind: config
+    - path: backend/app/main.py
+      kind: code
+    - path: backend/alembic/versions/
+      kind: migration
+    - path: frontend/src/App.vue
+      kind: code
+    - path: docs/00-context/changes/20260726-repo-bootstrap/review.md
+      kind: markdown
+    - path: docs/00-context/changes/20260726-repo-bootstrap/archive.md
+      kind: markdown
+  completion_report:
+    include_changed_files: true
+    include_verification: true
+    include_risks: true
+
+verification:
+  commands:
+    - command: python3 scripts/validate_execution_manifest.py docs/00-context/changes/20260726-repo-bootstrap/manifest.yaml
+      required: true
+    - command: git diff --check
+      required: true
+    - command: cd backend && .venv/bin/python -m pytest
+      required: true
+    - command: cd frontend && npm run build
+      required: true
+    - command: python3 -c "import yaml; yaml.safe_load(open('deploy/docker-compose.yml')); print('compose yaml OK')"
+      required: true
+    - command: docker compose -f deploy/docker-compose.yml config
+      required: false
+    - command: cd backend && .venv/bin/alembic upgrade head && .venv/bin/alembic upgrade head
+      required: false
+  quality_gates:
+    - docs_trace_to_spec
+    - freshness_gate_passed
+    - execution_manifest_schema_valid
+    - no_business_tables_in_baseline
+    - no_gateway_calls_in_readiness
+    - no_secrets_committed
+
+stop_conditions:
+  - required approved SDD input missing
+  - freshness-gate failed
+  - path outside constraints.allowed_paths requested
+  - secrets or real company documents would be committed
+  - scope expands into auth/upload/OCR/embedding/RAG/chat/provider/audit
+  - SDD/ADR/code conflict discovered during apply
