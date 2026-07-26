@@ -47,7 +47,8 @@ frontend/src/
 
 - Roles: `Admin` | `Editor` | `Viewer` (same vocabulary as backend).
 - Enforce role checks in Vue Router navigation guards and, where needed, in container components.
-- Frontend stores **token/session metadata only**. Never store passwords, password hashes, or SSO secrets in `localStorage`, Pinia, or cookies beyond the agreed session token.
+- Frontend stores **token/session metadata only**. Never store passwords, password hashes, or SSO secrets.
+- Access tokens must **not** use `localStorage`. Pilot default (ADR-0006 / OQ-AUTH-004): keep the access token in memory with `sessionStorage` as the reload fallback.
 - On 401, clear session and redirect to login. On 403, show a non-destructive denial state.
 
 ## Errors And Feedback

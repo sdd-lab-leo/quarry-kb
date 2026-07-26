@@ -32,9 +32,11 @@
 ### Constraints and Assumptions
 
 - FastAPI + Vue 3 + PostgreSQL/pgvector + Docker Compose remain fixed by ADR-0002.
-- `[DEFAULT]` The pilot uses a short-lived bearer JWT and current-user database lookup for protected requests.
+- `[DEFAULT]` The pilot uses a short-lived bearer JWT, current-user database lookup, and mandatory `auth_version` checks for protected requests.
 - `[DEFAULT]` The pilot uses HS256 runtime secret material unless a security review approves asymmetric keys.
+- `[DEFAULT]` Password hashing uses Argon2id; first Admin comes from runtime bootstrap env vars; last active Admin cannot be removed.
 - Audit persistence is a separate slice; this slice does not create audit tables.
+- Proposed defaults are recorded in ADR-0006 and require owner/security acceptance before coding.
 
 ## System Context
 
@@ -220,8 +222,9 @@ The slice owns local account identity, password verification, JWT issuance/valid
 - **Access control:** Enforce authentication and role checks in the API layer.
 - **Password protection:** Use a current password hashing scheme; never log or return plaintext/hash material.
 - **Token protection:** Do not log or render bearer tokens; keep signing keys runtime-only.
-- **Deactivation:** Resolve current status on every protected request so deactivation is immediate.
+- **Deactivation:** Resolve current status and mandatory `auth_version` on every protected request so deactivation is immediate and reactivation does not revive old tokens.
 - **Role changes:** Resolve current role on every protected request so changes take effect without token refresh.
+- **Last Admin:** Reject deactivate/demote operations that would leave zero active Admins.
 - **Logging:** Reuse the P0 redaction boundary and add auth-specific tests for credentials and bearer headers.
 - **Audit:** No audit table in this slice; later audit integration must observe account operations without receiving secrets.
 
@@ -229,7 +232,7 @@ The slice owns local account identity, password verification, JWT issuance/valid
 
 | ID | Risk / Tradeoff | Decision / Mitigation |
 |---|---|---|
-| R-ARCH-AUTH-001 | Stateless JWT alone cannot revoke a token before expiry. | Current-user status lookup on every protected request; optional auth-version invalidation is part of the design default. |
+| R-ARCH-AUTH-001 | Stateless JWT alone cannot revoke a token before expiry. | Current-user status lookup on every protected request; mandatory `auth_version` claim checked against the current User row (incremented on deactivation). |
 | R-ARCH-AUTH-002 | HS256 is simpler for a single host but has symmetric-key distribution risk. | Use runtime secret only for the pilot; require an explicit security decision before multi-host rollout. |
 | R-ARCH-AUTH-003 | Audit is required by the product but scheduled separately. | Keep audit out of this slice and trace account-operation hooks/boundaries to `audit-minimal`. |
 
@@ -237,9 +240,10 @@ The slice owns local account identity, password verification, JWT issuance/valid
 
 - ADR-0002 — technology stack, phase-one password/JWT auth, roles, and future SSO reservation.
 - ADR-0005 — health-probe exception and readiness boundary.
+- ADR-0006 — proposed pilot auth security defaults (`auth_version`, Argon2id, HS256, bootstrap env vars, browser storage, last-Admin protection).
 - `repo-bootstrap` SDD chain — existing envelope, migration, and frontend baseline.
 
 ## Open Questions
 
-- First-Admin bootstrap, password policy, JWT lifetime/algorithm, browser token storage, and identifier normalization remain the OQ-AUTH set.
-- Product owner must accept this slice before implementation handoff.
+- Owner/security must accept or amend ADR-0006 and OQ-AUTH-001 through OQ-AUTH-005 before implementation handoff.
+- Product owner must accept this slice before coding starts.

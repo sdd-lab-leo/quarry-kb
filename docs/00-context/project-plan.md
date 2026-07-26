@@ -39,8 +39,8 @@ flowchart LR
 | Stage | Current status | Evidence / gap |
 |---|---|---|
 | P0 Product baseline | `In progress` | Product specification v0.1.5, positioning, prototype, fixed evaluation question set, gateway ADRs (0004/0005), and a remediated `repo-bootstrap` SDD chain exist. Independent review findings for readiness contract, allowlist, SEC-01 exception, and traceability were fixed; document quality is `Ready with minor fixes` pending product-owner acceptance. |
-| P1 Engineering foundation | `Not started` | Application scaffolding is not present. |
-| P2 Identity and authorization | `Not started` | No backend or frontend implementation. |
+| P1 Engineering foundation | `In progress` | `repo-bootstrap` application scaffolding, health probes, Alembic vector baseline, Vue shell, and dockerless verification are archived. Residual gap: Docker/Compose + Postgres live migration smoke before the P1 stage gate can be marked `Verified`. |
+| P2 Identity and authorization | `In progress` | `auth-password-jwt` SDD chain exists (Draft; remediated after review). No auth/JWT implementation yet. Audit persistence remains a later `audit-minimal` slice and is still required for the full P2 exit gate. |
 | P3 Knowledge ingestion | `Not started` | No parser, OCR, embedding, or worker implementation. |
 | P4 Knowledge browse and admin | `Not started` | No application implementation. |
 | P5 RAG answering | `Not started` | No retrieval or chat implementation. |
@@ -48,13 +48,22 @@ flowchart LR
 | P7 Department pilot | `Not started` | No pilot release exists. |
 | P8 Follow-on product | `Deferred` | Explicitly outside v0.1. |
 
+### Stage Naming Note
+
+Delivery language often calls completed `repo-bootstrap` work “P0 foundation code” and the next slice `auth-password-jwt` “P1 identity docs/implementation.” This plan’s stage numbers differ:
+
+- Plan **P1** = engineering foundation (`repo-bootstrap`)
+- Plan **P2** = identity and authorization (`auth-password-jwt` plus later `audit-minimal` for audit records)
+
+Prefer slice keys (`repo-bootstrap`, `auth-password-jwt`) in handoffs to avoid P0/P1/P2 ambiguity.
+
 ## Stage Gates
 
 | Stage | Scope | The stage is complete only when... |
 |---|---|---|
 | P0 | Product and delivery baseline | The v0.1 scope is accepted; the evaluation question set exists; the first implementation slice has a complete SDD chain; external gateway contracts and data-egress assumptions are recorded. |
 | P1 | Engineering foundation | Compose starts `web`, `api`, and `postgres`; health checks work; migrations run; environment configuration is externalized; a frontend-to-backend smoke path passes. |
-| P2 | Identity and authorization | Admin can create/deactivate users and assign exactly one role; JWT sessions work; server-side authorization passes for Admin/Editor/Viewer; deactivated sessions are rejected; audit records are created. |
+| P2 | Identity and authorization | Admin can create/deactivate users and assign exactly one role; JWT sessions work; server-side authorization passes for Admin/Editor/Viewer; deactivated sessions are rejected. Audit records are created by the later `audit-minimal` slice and are required before this stage gate is complete. |
 | P3 | Knowledge ingestion | Editor/Admin can upload Markdown, TXT, PDF, and DOCX; files stay on the configured volume; parsing status is observable; scanned pages use internal-gateway OCR; embeddings use the internal gateway only; failed documents retain a retry/reindex path. |
 | P4 | Browse and administration | Users can search/filter documents, inspect metadata and chunks, and view parse mode; Admin can manage chat providers; Browse works without the internal gateway; secrets are never returned to users. |
 | P5 | RAG answering | Hybrid keyword/vector retrieval works; relevance thresholds prevent unsupported answers; answers contain stable citations; cited source context opens; sessions are private and persistent; provider/model is recorded per answer; user-level provider switching works. |
