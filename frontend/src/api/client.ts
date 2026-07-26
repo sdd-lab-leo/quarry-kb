@@ -1,6 +1,9 @@
 import { ApiError, type ApiEnvelope } from "../types/api";
 
 const DEFAULT_BASE = "/api/v1";
+const TOKEN_STORAGE_KEY = "quarry_kb_access_token";
+
+let memoryToken: string | null = null;
 
 function baseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || DEFAULT_BASE;
@@ -16,16 +19,65 @@ function shouldNeverLog(value: string): boolean {
   );
 }
 
-export async function apiRequest<T>(path: string): Promise<{
+export function getAccessToken(): string | null {
+  if (memoryToken) {
+    return memoryToken;
+  }
+  try {
+    const restored = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+    memoryToken = restored;
+    return restored;
+  } catch {
+    return null;
+  }
+}
+
+export function setAccessToken(token: string | null): void {
+  memoryToken = token;
+  try {
+    if (token) {
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else {
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage failures; memory remains source of truth.
+  }
+}
+
+export function clearAccessToken(): void {
+  setAccessToken(null);
+}
+
+export async function apiRequest<T>(
+  path: string,
+  options: {
+    method?: "GET" | "POST" | "PATCH";
+    body?: unknown;
+    auth?: boolean;
+  } = {},
+): Promise<{
   status: number;
   body: ApiEnvelope<T>;
 }> {
   const url = `${baseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (options.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (options.auth !== false) {
+    const token = getAccessToken();
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
   let response: Response;
   try {
     response = await fetch(url, {
-      method: "GET",
-      headers: { Accept: "application/json" },
+      method: options.method || "GET",
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch {
     throw new ApiError("API_UNREACHABLE", "Unable to reach API.", 0);
@@ -39,7 +91,6 @@ export async function apiRequest<T>(path: string): Promise<{
   }
 
   if (body.error?.message && shouldNeverLog(body.error.message)) {
-    // Keep UI message generic if a secret-shaped string ever leaks.
     body = {
       ...body,
       error: {

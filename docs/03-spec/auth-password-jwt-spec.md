@@ -1,7 +1,7 @@
 # Feature Specification: Password Authentication and JWT Authorization
 
 > **Source stories:** US-AUTH-001 through US-AUTH-004
-> **Spec status:** Draft — remediated after independent SDD review
+> **Spec status:** Approved — Implementation Ready
 > **Last updated:** 2026-07-26
 
 ---
@@ -24,7 +24,7 @@ An Admin can provision accounts, active users can log in, protected APIs can res
 - `docs/01-requirements/quarry-kb-product-spec-v0.1.md` — FR-01 to FR-07, FR-50 to FR-51, SEC-01/02, AC-01 (role matrix foundation)
 - `docs/00-context/decisions/ADR-0002-lock-technology-stack-and-auth-evolution.md`
 - `docs/00-context/decisions/ADR-0005-bootstrap-probe-allowlist-and-readiness-contract.md`
-- `docs/00-context/decisions/ADR-0006-pilot-auth-security-defaults.md` (Proposed)
+- `docs/00-context/decisions/ADR-0006-pilot-auth-security-defaults.md` (Accepted)
 - `docs/00-context/changes/20260726-repo-bootstrap/archive.md`
 - `docs/standards/backend.md` and `docs/standards/frontend.md`
 
@@ -70,13 +70,13 @@ An Admin can provision accounts, active users can log in, protected APIs can res
 ## Non-Functional Requirements
 
 - **Security:** Password hashing uses Argon2id through a maintained library; plaintext password, password hash, JWT, bearer header, and secret-shaped values must not appear in logs or responses.
-- **Security:** New account/bootstrap passwords use the 12-character minimum, must contain a non-whitespace character, and do not require a forced complexity regex. Passwords remain case-sensitive. Login never returns a policy-specific error after request-shape validation; it uses `401 AUTHENTICATION_FAILED` only. `[DEFAULT pending ADR-0006 acceptance]`
-- **Security:** JWT signing uses HS256 with the runtime environment secret `JWT_SIGNING_KEY`. When `APP_ENV` is not `local`, missing/blank key fails closed at settings/startup validation and auth routes are not served. This does not add a JWT component to ADR-0005 readiness. `[DEFAULT pending ADR-0006 acceptance]`
+- **Security:** New account/bootstrap passwords use the 12-character minimum, must contain a non-whitespace character, and do not require a forced complexity regex. Passwords remain case-sensitive. Login never returns a policy-specific error after request-shape validation; it uses `401 AUTHENTICATION_FAILED` only. `[Accepted ADR-0006]`
+- **Security:** JWT signing uses HS256 with the runtime environment secret `JWT_SIGNING_KEY`. When `APP_ENV` is not `local`, missing/blank key fails closed at settings/startup validation and auth routes are not served. This does not add a JWT component to ADR-0005 readiness. `[Accepted ADR-0006]`
 - **Security:** Every issued access token has `sub`, `iat`, `exp`, and `auth_version`; `iat`/`exp` are UTC NumericDate values and `expires_at` in the response mirrors `exp` as ISO-8601 UTC. Pilot tokens must not include a `role` claim.
 - **Security:** Access tokens must include `auth_version`. Deactivation increments `auth_version`. Protected requests reject version mismatches and inactive accounts. This invalidation mechanism is mandatory.
 - **Reliability:** A deactivation must be observed on the next protected request without waiting for token expiry. A current-user lookup is therefore part of protected-request authorization.
 - **Consistency:** A role change must be used on the next authorization check; the role claim in a previously issued token is not authoritative.
-- **Privacy:** Login failures must not disclose whether an account exists. User list and current-user responses must exclude password hashes, tokens, external provider credentials, `external_subject` by default, `auth_version`, and internal secret values. Auth request-shape and dependency failures must use the P0 envelope; unexpected server failures must use HTTP 500 with `error.code = INTERNAL_ERROR` and a safe message without raw exception details.
+- **Privacy:** Login failures must not disclose whether an account exists. User list and current-user responses must exclude password hashes, tokens, external provider credentials, `external_subject` by default, `auth_version`, and internal secret values. Auth request-shape and dependency failures must use the P0 envelope; unexpected server failures must use HTTP 500 with `error.code = AUTH_INTERNAL_ERROR` and a safe message without raw exception details.
 - **Performance:** No product latency target is specified for authentication. The implementation should keep authorization lookup bounded and index-backed; a measurable target remains an open question.
 - **Environment support:** Unit and API tests must run without live SSO, paid services, or external network calls. Compose/PostgreSQL migration smoke is required before implementation handoff is accepted.
 - **Abuse controls:** Login rate limiting / lockout is deferred for the intranet pilot and is not required in this slice. `[DEFERRED]`
@@ -186,9 +186,9 @@ The API uses the P0 envelope: `success`, `data`, `error`, and `meta`.
 | `LAST_ADMIN_REQUIRED` | 409 | Operation would remove or demote the last active Admin. |
 | `VALIDATION_ERROR` | 422 | Request fields violate the approved input rules. |
 | `USER_NOT_FOUND` | 404 | Admin target user does not exist; no secret data is disclosed. |
-| `INTERNAL_ERROR` | 500 | Unexpected server/dependency failure; safe message only. |
+| `AUTH_INTERNAL_ERROR` | 500 | Unexpected server/dependency failure; safe message only. |
 
-Request-shape validation, authentication dependency failures, and business errors use the same P0 envelope (`success`, `data`, `error`, `meta`). A structurally invalid request returns `VALIDATION_ERROR`; an unexpected server/dependency failure returns HTTP 500 with `INTERNAL_ERROR` without credentials, tokens, connection strings, or raw exception details.
+Request-shape validation, authentication dependency failures, and business errors use the same P0 envelope (`success`, `data`, `error`, `meta`). A structurally invalid request returns `VALIDATION_ERROR`; an unexpected server/dependency failure returns HTTP 500 with `AUTH_INTERNAL_ERROR` without credentials, tokens, connection strings, or raw exception details.
 
 ## Dependencies
 
@@ -197,7 +197,7 @@ Request-shape validation, authentication dependency failures, and business error
 - Verified `repo-bootstrap` runtime, migration, API envelope, and frontend client baseline.
 - ADR-0002 role and password-to-SSO evolution decision.
 - ADR-0005 health-probe authorization exception.
-- Proposed ADR-0006 pilot auth security defaults.
+- Accepted ADR-0006 pilot auth security defaults.
 
 ### Downstream
 
@@ -210,8 +210,8 @@ Request-shape validation, authentication dependency failures, and business error
 
 | ID | Description | Type | Impact | Recommendation |
 |---|---|---|---|---|
-| R-AUTH-001 | First Admin bootstrap path depends on ADR-0006 acceptance. | Gap | High | Accept or amend ADR-0006 before implementation. |
-| R-AUTH-002 | JWT lifetime, algorithm, password policy, identifier rules, and browser storage remain Proposed in ADR-0006. | Unclear | High | Accept ADR-0006 or record amendments before apply. |
+| R-AUTH-001 | First Admin bootstrap path is operationally sensitive. | Residual | Medium | Covered by Accepted ADR-0006 fail-closed bootstrap tests. |
+| R-AUTH-002 | JWT lifetime, algorithm, password policy, identifier rules, and browser storage are Accepted in ADR-0006. | Residual | Low | Keep secrets out of Git; revisit for multi-host. |
 | R-AUTH-003 | Audit requirements include account actions, but audit persistence is a later slice. | Boundary | Medium | Keep audit out of this slice and make `audit-minimal` the follow-up gate. |
 | R-AUTH-004 | No user retention/deletion policy is defined. | Gap | Medium | Use deactivation only for v0.1 and defer deletion/retention to a later decision. |
 
@@ -225,4 +225,4 @@ Request-shape validation, authentication dependency failures, and business error
 
 ## Open Questions
 
-See `auth-password-jwt-requirement.md` OQ-AUTH-001 through OQ-AUTH-005. Their documented defaults are fully encoded in proposed ADR-0006 and must be accepted or explicitly amended before implementation handoff. Documentation of defaults is not owner approval.
+None remaining for implementation. OQ-AUTH-001 through OQ-AUTH-005 are Confirmed and ADR-0006 is Accepted (2026-07-26), including UUID `user_id` and `AUTH_INTERNAL_ERROR`.

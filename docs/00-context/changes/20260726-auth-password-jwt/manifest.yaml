@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=../../execution-manifest.schema.json
+manifest_schema_version: "1.0"
+manifest_id: 20260726-auth-password-jwt
+created_at: 2026-07-26T15:33:23Z
+created_by: cloud-agent
+status: archived
+
+workspace:
+  project_name: quarry-kb
+  repo_path: /workspace
+  repo_url: https://github.com/sdd-lab-leo/quarry-kb
+  branch: cursor/auth-password-jwt-sdd-fix-757e
+  commit_sha: f3de17826d9b9e1ce3aec67adcea3e5f6bf1d888
+
+task:
+  title: Implement auth-password-jwt identity slice
+  objective: >
+    Implement accepted password/JWT authentication, Admin account lifecycle,
+    server-side current-role authorization, first-Admin env bootstrap, and a
+    safe Vue session/Admin surface without audit, knowledge, SSO, or refresh tokens.
+  mode: code-change
+  sdd_profile: quarry-kb-fastapi-vue
+
+out_of_scope:
+  - Refresh tokens and server-side session tables
+  - SSO / OIDC / LDAP / MFA / password reset / email verification
+  - Audit persistence and Admin audit list APIs
+  - Upload, OCR, embedding, RAG, chat, provider tables or APIs
+  - Real secrets, committed default passwords, real company documents
+  - Lockfile or unrelated dependency upgrades
+  - Git commit, push, or pull-request creation unless explicitly requested
+  - Reusing archived repo-bootstrap manifest as active handoff
+
+inputs:
+  source_references:
+    - type: local-file
+      ref: docs/06-tasks/auth-password-jwt-tasks.md
+      version: working-tree-accepted-20260726
+      notes: Primary task breakdown for apply
+    - type: owner-acceptance
+      ref: product-owner auth-password-jwt acceptance 2026-07-26
+      version: "2026-07-26"
+      notes: Confirms OQ-AUTH-001..005, ADR-0006, UUID user_id, AUTH_INTERNAL_ERROR
+  documents:
+    - path: docs/01-requirements/auth-password-jwt-requirement.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/02-user-stories/auth-password-jwt-user-stories.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/03-spec/auth-password-jwt-spec.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/04-architecture/auth-password-jwt-architecture.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/04-architecture/auth-password-jwt-data-flow.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/04-architecture/auth-password-jwt-data-model.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/05-design/auth-password-jwt-design.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/05-design/contracts/auth-password-jwt-API_IMPLEMENTATION_GUIDE.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/06-tasks/auth-password-jwt-tasks.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/00-context/auth-password-jwt-traceability.md
+      required: true
+      version: working-tree-accepted-20260726
+    - path: docs/standards/backend.md
+      required: true
+      version: null
+    - path: docs/standards/frontend.md
+      required: true
+      version: null
+  adrs:
+    - path: docs/00-context/decisions/ADR-0002-lock-technology-stack-and-auth-evolution.md
+      required: true
+    - path: docs/00-context/decisions/ADR-0005-bootstrap-probe-allowlist-and-readiness-contract.md
+      required: true
+    - path: docs/00-context/decisions/ADR-0006-pilot-auth-security-defaults.md
+      required: true
+
+constraints:
+  allowed_paths:
+    - backend/
+    - frontend/
+    - deploy/
+    - docs/
+    - samples/
+    - scripts/
+    - README.md
+    - .env.example
+    - .gitignore
+  forbidden_paths:
+    - .env
+    - secrets/
+    - credentials/
+    - data/
+    - uploads/
+    - backend/data/
+    - backend/uploads/
+    - package-lock.json
+    - frontend/package-lock.json
+  external_actions_require_approval: true
+  standards_refs:
+    - docs/standards/frontend.md
+    - docs/standards/backend.md
+
+outputs:
+  expected_artifacts:
+    - path: backend/alembic/versions/
+      kind: migration
+    - path: backend/app/api/auth.py
+      kind: code
+    - path: backend/app/api/admin_users.py
+      kind: code
+    - path: frontend/src/stores/auth.ts
+      kind: code
+    - path: docs/00-context/changes/20260726-auth-password-jwt/review.md
+      kind: markdown
+    - path: docs/00-context/changes/20260726-auth-password-jwt/archive.md
+      kind: markdown
+  completion_report:
+    include_changed_files: true
+    include_verification: true
+    include_risks: true
+
+verification:
+  commands:
+    - command: python3 scripts/validate_execution_manifest.py docs/00-context/changes/20260726-auth-password-jwt/manifest.yaml
+      required: true
+    - command: git diff --check
+      required: true
+    - command: cd backend && .venv/bin/python -m pytest
+      required: true
+    - command: cd frontend && npm run build
+      required: true
+    - command: python3 -c "import yaml; yaml.safe_load(open('deploy/docker-compose.yml')); print('compose yaml OK')"
+      required: true
+    - command: docker compose -f deploy/docker-compose.yml config
+      required: false
+    - command: cd backend && .venv/bin/alembic upgrade head && .venv/bin/alembic upgrade head
+      required: false
+  quality_gates:
+    - docs_trace_to_spec
+    - freshness_gate_passed
+    - execution_manifest_schema_valid
+    - adr_0006_accepted
+    - no_audit_or_knowledge_tables
+    - no_localStorage_access_token
+    - no_secrets_committed
+    - health_probes_remain_anonymous
+
+stop_conditions:
+  - required approved SDD input missing
+  - freshness-gate failed
+  - path outside constraints.allowed_paths requested
+  - secrets or real company documents would be committed
+  - scope expands into audit/upload/OCR/embedding/RAG/chat/provider/SSO/refresh-token
+  - SDD/ADR/code conflict discovered during apply
+  - ADR-0006 not Accepted

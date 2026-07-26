@@ -14,7 +14,7 @@ export interface FoundationStatus {
 
 export async function fetchFoundationStatus(): Promise<FoundationStatus> {
   try {
-    const { status, body } = await apiRequest<ReadinessData>("/health/ready");
+    const { status, body } = await apiRequest<ReadinessData>("/health/ready", { auth: false });
     if (status === 200 && body.success && body.data?.status === "ready") {
       return {
         state: "ready",

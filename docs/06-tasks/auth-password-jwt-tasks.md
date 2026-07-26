@@ -1,12 +1,16 @@
 # Implementation Task Breakdown: Password Authentication and JWT Authorization
 
+## Status
+
+Approved — Implementation Ready
+
 ## Overview
 
 Implement the `auth-password-jwt` slice on top of the verified `repo-bootstrap` foundation. The outcome is local password login, JWT access sessions, Admin account lifecycle, server-side current-role authorization, and a minimal frontend session plus Admin account surface.
 
 **Planning assumptions:**
 
-- The slice is not approved for coding until proposed ADR-0006 is accepted or amended. OQ-AUTH-001 through OQ-AUTH-005 are encoded in ADR-0006; documenting those defaults is not owner/security approval.
+- ADR-0006 is Accepted and OQ-AUTH-001 through OQ-AUTH-005 are Confirmed (2026-07-26), including UUID `user_id` and `AUTH_INTERNAL_ERROR`.
 - No knowledge, model, upload, provider, audit, or SSO capability is added.
 - All database changes use Alembic and start from revision `20260726_0001`.
 - The health-probe exception from ADR-0005 remains intact.
@@ -65,12 +69,12 @@ The critical path is TASK-AUTH-001 → TASK-AUTH-008 → TASK-AUTH-002 → TASK-
 ### TASK-AUTH-001: Accept and Pin Authentication Defaults
 
 - **Objective:** Remove implementation ambiguity before code starts.
-- **Scope:** Accept or amend ADR-0006, which already encodes password policy and login-validation semantics, first-Admin bootstrap env/concurrency/fail-closed startup, JWT lifetime/algorithm/key source/claims (no `role` claim), browser token storage, identifier normalization, Argon2id hashing, UUID `user_id`, mandatory `auth_version`, `INTERNAL_ERROR` for unexpected 5xx, JWT-key settings/startup fail-closed without changing ADR-0005 readiness, and last-Admin protection; update this SDD set if amended.
+- **Scope:** Accept or amend ADR-0006, which already encodes password policy and login-validation semantics, first-Admin bootstrap env/concurrency/fail-closed startup, JWT lifetime/algorithm/key source/claims (no `role` claim), browser token storage, identifier normalization, Argon2id hashing, UUID `user_id`, mandatory `auth_version`, `AUTH_INTERNAL_ERROR` for unexpected 5xx, JWT-key settings/startup fail-closed without changing ADR-0005 readiness, and last-Admin protection; update this SDD set if amended.
 - **Dependencies:** None.
 - **Owner type:** product / security / architecture
 - **Priority:** Must
-- **Verification:** Written approval or Accepted ADR-0006 that covers OQ-AUTH-001 through OQ-AUTH-005 and the security defaults above.
-- **Definition of done:** No implementation-impacting auth default remains unowned or deferred; ADR-0006 is Accepted or explicitly superseded.
+- **Verification:** ADR-0006 Accepted; OQ-AUTH-001–005 Confirmed; UUID `user_id` and `AUTH_INTERNAL_ERROR` recorded.
+- **Definition of done:** No implementation-impacting auth default remains unowned or deferred; ADR-0006 is Accepted.
 
 ### TASK-AUTH-008: Prepare Implementation Handoff Package
 
@@ -171,12 +175,11 @@ TASK-AUTH-001
 
 ## Risks / Blockers
 
-- First-Admin bootstrap remains a high-impact operational dependency until ADR-0006 is accepted.
+- First-Admin bootstrap remains an operational dependency; covered by Accepted ADR-0006 fail-closed behavior.
 - Token algorithm/key rotation is a security decision recorded in ADR-0006, not a coding detail.
 - Browser storage choice affects XSS/session persistence and must stay aligned with frontend standards.
 - Audit records are required by the overall product but are intentionally deferred; later audit work must consume account-operation facts without secrets.
 
 ## Open Questions
 
-- OQ-AUTH-001 through OQ-AUTH-005 remain pending only as owner/security acceptance of proposed ADR-0006 (defaults are already documented there).
-- ADR-0006 must be accepted or amended before TASK-AUTH-008 completes.
+None remaining. Proceed with TASK-AUTH-008 handoff and implementation.

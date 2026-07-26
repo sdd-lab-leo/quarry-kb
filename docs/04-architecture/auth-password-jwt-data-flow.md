@@ -1,5 +1,9 @@
 # Data Flow: Password Authentication and JWT Authorization
 
+## Status
+
+Approved — Implementation Ready
+
 ## Scope
 
 This document describes the identity, token, account lifecycle, and authorization data paths for `auth-password-jwt`. It does not describe document, retrieval, chat, provider, or audit data flows.

@@ -2,11 +2,22 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
 2026-07-26
+
+## Acceptance
+
+Accepted by product owner on 2026-07-26 for `auth-password-jwt` implementation preparation.
+
+Confirmed with the acceptance:
+
+- OQ-AUTH-001 through OQ-AUTH-005
+- UUID `user_id`
+- Unexpected auth/server error code `AUTH_INTERNAL_ERROR` (HTTP 500)
+- Pilot tokens omit `role` claims
 
 ## Context
 
@@ -43,7 +54,7 @@ For the department intranet pilot, adopt the following defaults unless this ADR 
     - `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME` (optional; default = normalized identifier)
     Bootstrap runs only when zero Admin accounts exist (counting any Admin row regardless of status), creates exactly one active Admin, never commits default passwords, and is ignored once any Admin exists. The zero-Admin check and create must be serialized so concurrent starts have one winner. When zero Admins exist and required bootstrap values are missing or invalid: create no Admin and **fail closed at startup** (process does not become ready for business use).
 11. **Last-Admin protection:** Reject any Admin operation that would deactivate or demote the last remaining active Admin account. The count/check and mutation must run in one serialized transaction.
-12. **Unexpected server errors:** Auth request-validation and auth-dependency failures use the P0 envelope. Unexpected server/dependency failures use HTTP 500 with `error.code = INTERNAL_ERROR` and a safe non-secret message; never return raw exception text, SQL, hashes, tokens, or connection strings.
+12. **Unexpected server errors:** Auth request-validation and auth-dependency failures use the P0 envelope. Unexpected server/dependency failures use HTTP 500 with `error.code = AUTH_INTERNAL_ERROR` and a safe non-secret message; never return raw exception text, SQL, hashes, tokens, or connection strings.
 
 ## Alternatives Considered
 
@@ -69,14 +80,14 @@ For the department intranet pilot, adopt the following defaults unless this ADR 
 
 ### Negative
 
-- Owner/security must still accept this Proposed ADR (or amend it) before coding starts.
+- Operators must keep bootstrap and JWT secrets outside Git.
 - Operators must supply bootstrap env vars on first boot and rotate/remove them afterward.
 - Fail-closed bootstrap/startup means Compose will not become healthy until required first-Admin values are present when zero Admins exist.
 - HS256 remains a single-host pilot choice and must be revisited for multi-host rollout.
 
 ### Neutral / Operational
 
-- `TASK-AUTH-001` accepts or amends this ADR; `TASK-AUTH-008` pins the accepted revision in the execution manifest.
+- `TASK-AUTH-001` records this acceptance; `TASK-AUTH-008` pins the accepted revision in the execution manifest.
 - Audit persistence remains deferred to `audit-minimal`.
 
 ## Review Triggers

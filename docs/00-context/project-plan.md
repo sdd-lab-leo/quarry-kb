@@ -40,7 +40,7 @@ flowchart LR
 |---|---|---|
 | P0 Product baseline | `Verified` | Product specification v0.1.5, positioning, prototype, fixed evaluation question set, gateway ADRs (0004/0005), and the remediated `repo-bootstrap` SDD chain exist. Product-owner acceptance of the v0.1 scope and first slice was recorded on 2026-07-26. |
 | P1 Engineering foundation | `Verified` | `repo-bootstrap` Compose topology, web/api/postgres healthchecks, externalized runtime configuration, health probes, Alembic vector baseline, Vue shell, Docker Compose/Postgres migration smoke, and frontend-to-backend readiness smoke passed on 2026-07-26. |
-| P2 Identity and authorization | `In progress` | `auth-password-jwt` SDD chain exists (Draft; Major review findings remediated; ADR-0006 still Proposed). No auth/JWT implementation yet. Audit persistence remains a later `audit-minimal` slice and is still required for the full P2 exit gate. |
+| P2 Identity and authorization | `In progress` | `auth-password-jwt` implemented and change package archived (2026-07-26); Docker/Postgres live smoke optional residual. Audit persistence remains a later `audit-minimal` slice and is still required for the full P2 exit gate. |
 | P3 Knowledge ingestion | `Not started` | No parser, OCR, embedding, or worker implementation. |
 | P4 Knowledge browse and admin | `Not started` | No application implementation. |
 | P5 RAG answering | `Not started` | No retrieval or chat implementation. |

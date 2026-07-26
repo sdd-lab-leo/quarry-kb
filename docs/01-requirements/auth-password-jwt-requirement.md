@@ -2,7 +2,9 @@
 
 ## Status
 
-Draft — remediated after independent SDD review; not yet approved for implementation.
+Approved — Implementation Ready
+
+Accepted by product owner on 2026-07-26. OQ-AUTH-001 through OQ-AUTH-005 are Confirmed. ADR-0006 is Accepted. UUID `user_id` and `AUTH_INTERNAL_ERROR` are confirmed.
 
 ## Slice Contract
 
@@ -11,7 +13,7 @@ Draft — remediated after independent SDD review; not yet approved for implemen
 | Slice | `auth-password-jwt` |
 | Goal | Provide account/password login, JWT access sessions, server-side role authorization, and Admin-managed account lifecycle. |
 | Upstream | `docs/01-requirements/quarry-kb-product-spec-v0.1.md`, FR-01 to FR-07 and FR-50 to FR-51 |
-| Related decisions | ADR-0002; ADR-0005; proposed ADR-0006; the P0 `repo-bootstrap` SDD chain and API envelope |
+| Related decisions | ADR-0002; ADR-0005; Accepted ADR-0006; the P0 `repo-bootstrap` SDD chain and API envelope |
 | Verification | Backend unit/API tests, migration upgrade/reapply, frontend build, protected-route smoke, and role matrix checks |
 | Stage naming note | The project plan calls engineering foundation P1 and identity P2, while current delivery language calls verified `repo-bootstrap` P0. This document follows the product-spec slice order: `auth-password-jwt` is the next slice after `repo-bootstrap`. Identity work in this slice does **not** include audit persistence; audit remains `audit-minimal` and is part of the broader plan P2 exit gate. |
 
@@ -90,7 +92,7 @@ The source product specification defines phase-one password authentication with 
 
 ## Open Questions
 
-| ID | Question | Documented default in proposed ADR-0006 | Impact |
+| ID | Question | Confirmed default (ADR-0006 Accepted) | Impact |
 |---|---|---|---|
 | OQ-AUTH-001 | What is the pilot password policy, and how should policy-invalid values be handled at login versus account creation/bootstrap? | Minimum 12 characters, at least one non-whitespace character, no forced complexity regex, case-sensitive. Enforce at create/bootstrap with `422 VALIDATION_ERROR`. At login, after request-shape validation, use only generic `401 AUTHENTICATION_FAILED` (including passwords that would fail create policy). | Validation, login error semantics, and onboarding UX |
 | OQ-AUTH-002 | How is the first Admin bootstrapped, including concurrent startup and invalid/missing bootstrap configuration? | One-time startup bootstrap from `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER`, `AUTH_BOOTSTRAP_ADMIN_PASSWORD`, and optional `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME` (default = normalized identifier). Serialized zero-Admin check/create; ignored after any Admin exists; no committed default password. Missing/invalid required values when zero Admins exist: create no Admin and fail closed at startup. | First-run operability, concurrency, and secret handling |
@@ -98,4 +100,4 @@ The source product specification defines phase-one password authentication with 
 | OQ-AUTH-004 | Where should the browser hold the access token? | In-memory state with `sessionStorage` as the reload fallback; never `localStorage`. | Reload behavior and XSS exposure |
 | OQ-AUTH-005 | What account identifier normalization is required? | Trim and lowercase for lookup/uniqueness; length 3–64 after normalization; pattern `[a-z0-9._@-]+`; display name stored separately. | Login and uniqueness behavior |
 
-OQ-AUTH-001 through OQ-AUTH-005 are fully encoded in proposed ADR-0006 (including password policy, identifier normalization, bootstrap fail-closed, JWT key startup fail-closed without changing ADR-0005 readiness components, UUID `user_id`, and `INTERNAL_ERROR` for unexpected 5xx). Owner/security acceptance of ADR-0006 (or an amended ADR) closes them for implementation handoff. Do not treat documentation of these defaults as owner approval.
+OQ-AUTH-001 through OQ-AUTH-005 are **Confirmed**. ADR-0006 is **Accepted**. UUID `user_id` and unexpected error code `AUTH_INTERNAL_ERROR` (HTTP 500) are confirmed as part of TASK-AUTH-001.
