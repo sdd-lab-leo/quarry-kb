@@ -19,7 +19,7 @@
 - Distinguish process liveness from database/migration/configuration readiness.
 - Provide a migration boundary for later application data.
 - Keep chat provider configuration vendor-neutral.
-- Reject public embedding/OCR endpoints before outbound use.
+- Reject non-allowlisted embedding/OCR URL hosts by literal host match before outbound use.
 
 ### Key Non-Functional Drivers
 
@@ -32,8 +32,9 @@
 
 - The repository is greenfield; there are no existing application components to reuse.
 - The first supported environment is local Docker Compose.
-- `[ASSUMPTION]` Health probes are restricted to the service/deployment boundary and do not require user authentication.
-- Exact gateway URLs, model IDs, OCR path, and rate limits are deployment inputs under OQ-09.
+- Health probes are an explicit `SEC-01` exception: unauthenticated infrastructure interfaces restricted to the Compose/service network boundary (ADR-0005).
+- Exact gateway URLs, model IDs, OCR path, and rate limits are deployment inputs under OQ-09. Bootstrap uses placeholder hosts on the default allowlist.
+- The Compose topology file is `deploy/docker-compose.yml`.
 
 ## System Context
 
@@ -122,7 +123,7 @@ The slice includes the local web shell, API, database connection, migration base
 ### Integration Adapters
 
 - **Database adapter:** Connects the API readiness boundary to PostgreSQL/pgvector.
-- **Model gateway adapters:** Not implemented in this slice; ADR-0004 defines their future boundary and allowed destinations.
+- **Model gateway adapters:** Not implemented in this slice; ADR-0004/ADR-0005 define their future boundary, allowlist rule, and probe exception.
 
 ## Data Architecture
 
@@ -138,12 +139,12 @@ No application business entities are owned by this slice.
 ### State / Status Models
 
 - Process liveness: `alive` → `not-running` when the API process stops.
-- Readiness: `not-ready` → `ready` when database, migration, and configuration checks pass; `ready` → `not-ready` when any required local dependency fails.
+- Readiness: `not-ready` (HTTP 503) → `ready` (HTTP 200) when configuration, database, migration, and vector-capability checks all pass; `ready` → `not-ready` when any required local dependency fails.
 - Gateway status is intentionally not part of bootstrap readiness because no gateway call is made.
 
 ### Persistence Responsibilities
 
-The migration tool owns migration metadata. Later slices own their business entities and migrations; bootstrap must not create placeholder user or knowledge tables that imply unapproved product behavior.
+The migration tool owns migration metadata. The bootstrap baseline enables the PostgreSQL `vector` extension and records that revision; it creates no business tables. Later slices own their business entities and migrations.
 
 ## Integration Architecture
 
@@ -177,7 +178,7 @@ The migration tool owns migration metadata. Later slices own their business enti
 
 ### Validation Flow
 
-Configuration is validated before the API reports readiness. Embedding/OCR host policy is checked before any future adapter can make an outbound request. The health boundary never treats an uncalled gateway as healthy or unhealthy.
+Configuration is validated before the API reports readiness. Embedding/OCR host policy uses literal allowlist matching and is checked before any future adapter can make an outbound request. The health boundary never treats an uncalled gateway as healthy or unhealthy.
 
 ### Failure and Retry Handling
 
@@ -221,7 +222,7 @@ Compose restarts or manual developer retries are the bootstrap recovery path. Th
 
 ### Access Control
 
-Business authorization is deferred to `auth-password-jwt`. Infrastructure probes expose no business data and must be network-restricted.
+Business authorization is deferred to `auth-password-jwt`. Infrastructure probes are an explicit exception to product `SEC-01`: they expose no business data, require no session token, and must remain reachable only through the Compose/service network boundary for local bootstrap.
 
 ### Secret Protection
 

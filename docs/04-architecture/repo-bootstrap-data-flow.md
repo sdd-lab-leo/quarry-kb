@@ -15,7 +15,7 @@ API configuration boundary
         │
         ├── validate required runtime settings
         ├── validate database URL shape
-        ├── validate embedding/OCR host allowlist
+        ├── validate embedding/OCR hosts by literal allowlist match
         └── redact secrets from diagnostics
         ▼
 Validated runtime state
@@ -25,7 +25,8 @@ Validated runtime state
 |---|---|---|---|
 | Runtime environment | Required names and parseable values | Runtime settings | No secret value is returned in diagnostics. |
 | Database URL | Parseable connection target | Database settings | Credentials are runtime-only. |
-| Embedding/OCR URL | Intranet/gateway allowlist match | Approved integration target | Public target is rejected before request. |
+| Embedding/OCR URL | URL host literally matches allowlist entry (hostname or `host:port`); empty host invalid; no DNS lookup | Approved integration target | Public or unknown host is rejected before request. |
+| Allowlist | Non-empty list of approved hosts; default includes placeholder host `gateway.internal` | Host policy | Used only for embedding/OCR validation in this slice. |
 | Chat URL | Provider-neutral placeholder/config | Chat target metadata | Public chat is permitted only through later explicit provider configuration. |
 
 ## Flow 2: Database Readiness
@@ -34,25 +35,30 @@ Validated runtime state
 API readiness request
         │
         ▼
+Configuration validation
+        │
+        ├── invalid → configuration not-ready → HTTP 503
+        │
+        ▼
 Database connection check
         │
-        ├── connection unavailable → database not-ready
+        ├── connection unavailable → database not-ready → HTTP 503
         │
         ▼
 Migration state check
         │
-        ├── baseline missing → migration not-ready
+        ├── baseline missing → migration not-ready → HTTP 503
         │
         ▼
 Vector capability check
         │
-        ├── unavailable → capability not-ready
+        ├── `vector` extension unavailable → vector_capability not-ready → HTTP 503
         │
         ▼
-Safe readiness response
+HTTP 200 ready response (all components ready)
 ```
 
-The readiness path exchanges only connection and capability status with PostgreSQL. It does not send prompts, document text, page images, or model requests.
+The readiness path exchanges only connection, migration, and capability status with PostgreSQL. It does not send prompts, document text, page images, or model requests.
 
 ## Flow 3: Frontend Health Display
 
@@ -63,17 +69,20 @@ Browser
   ▼
 Typed frontend API client
   │
-  ├── success → normalized ready state
-  └── failure → normalized safe error state
+  ├── HTTP 200 + ready → normalized ready state
+  ├── HTTP 503 + not-ready → normalized needs_attention state
+  └── transport / non-503 failure → normalized unreachable state
   ▼
 Vue shell status panel
 ```
 
 | API result | Frontend state | User-visible behavior |
 |---|---|---|
-| HTTP success + ready | `ready` | Show foundation ready. |
-| HTTP success + not-ready | `degraded` | Show which local dependency needs attention without secrets. |
-| HTTP failure | `error` | Show retry/actionable failure state. |
+| HTTP 200 + `status=ready` | `ready` | Show foundation ready. |
+| HTTP 503 + component diagnostics | `needs_attention` | Show which local dependency needs attention without secrets. |
+| Transport failure or unexpected non-503 error | `unreachable` | Show retry / unable-to-reach-API state. |
+
+There is no `HTTP 200 + not-ready` success path. Not-ready is always HTTP 503.
 
 ## Flow 4: Future Gateway Boundary
 
@@ -92,16 +101,17 @@ Bootstrap records this boundary and validates configuration policy. It does not 
 | Object | Created by | State changes | Retention/ownership |
 |---|---|---|---|
 | Runtime settings | Deployment environment | Unloaded → validated / invalid | Runtime-owned; not committed. |
-| Migration state | Migration tool | Missing → baseline applied | Database-owned; later slices add revisions. |
-| Health result | API probe | Not-ready → ready or failure | Ephemeral operational response. |
+| Migration state | Alembic baseline | Missing → baseline applied (`vector` enabled) | Database-owned; later slices add revisions. |
+| Health result | API probe | Not-ready (503) → ready (200) or failure | Ephemeral operational response. |
 
 ## Edge-Case Trace
 
 | Rule | Edge case | Expected result |
 |---|---|---|
-| Embedding/OCR allowlist | URL is empty | Configuration invalid; no request. |
-| Embedding/OCR allowlist | URL is a public HTTPS host | Configuration invalid; no public fallback. |
-| Embedding/OCR allowlist | URL is an approved intranet host with a path | Configuration valid; live call remains deferred. |
-| Readiness does not call gateway | Gateway is down but database is ready | Readiness can still report local readiness; it does not claim gateway health. |
-| Readiness depends on database | API is alive but database is down | Liveness succeeds; readiness fails. |
-
+| Embedding/OCR allowlist | URL is empty | Configuration invalid; HTTP 503; no request. |
+| Embedding/OCR allowlist | URL host is a public HTTPS host | Configuration invalid; HTTP 503; no public fallback; no DNS lookup. |
+| Embedding/OCR allowlist | URL host is `gateway.internal` with a path and that host is on the default allowlist | Configuration valid; live call remains deferred. |
+| Embedding/OCR allowlist | URL host would DNS-resolve to an intranet IP but is not listed | Configuration invalid; literal match only. |
+| Readiness does not call gateway | Gateway is down but database/migration/vector are ready | Readiness can still return HTTP 200; it does not claim gateway health. |
+| Readiness depends on database | API is alive but database is down | Liveness succeeds; readiness returns HTTP 503 with `DATABASE_NOT_READY`. |
+| Vector capability | Extension missing after migration failure | Readiness returns HTTP 503 with `VECTOR_CAPABILITY_UNAVAILABLE`. |

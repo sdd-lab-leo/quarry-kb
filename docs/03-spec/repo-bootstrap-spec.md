@@ -71,13 +71,13 @@ A clean checkout can start the documented local services, apply the baseline dat
 ### Health And Readiness
 
 - **FR-BOOT-03:** The API exposes a liveness probe that reports process health without requiring PostgreSQL or the model gateway. *(Source: US-BOOT-002)*
-- **FR-BOOT-04:** The API exposes a readiness probe that reports database, migration, and configuration readiness. It does not infer gateway health without making a gateway call. *(Source: US-BOOT-002)*
+- **FR-BOOT-04:** The API exposes a readiness probe that reports configuration, database, migration, and vector-capability readiness. HTTP 200 means all required local components are ready. HTTP 503 means not-ready and includes per-component states plus one stable error code. The probe never calls the model gateway and never reports gateway health. *(Source: US-BOOT-002)*
 
 ### Database Foundation
 
-- **FR-BOOT-05:** A fresh PostgreSQL database can be brought to the foundation migration state through the documented migration command. *(Source: US-BOOT-003)*
+- **FR-BOOT-05:** A fresh PostgreSQL database can be brought to the foundation migration state through the documented Alembic baseline, which enables the PostgreSQL `vector` extension and records the revision metadata without creating business tables. *(Source: US-BOOT-003)*
 - **FR-BOOT-06:** Reapplying the baseline is safe and does not create feature data because no feature entities belong to this slice. *(Source: US-BOOT-003)*
-- **FR-BOOT-07:** Missing pgvector capability prevents readiness and produces a clear diagnostic. *(Source: US-BOOT-003)*
+- **FR-BOOT-07:** Missing pgvector capability sets the `vector_capability` component to not-ready, returns HTTP 503, and produces a clear diagnostic. *(Source: US-BOOT-003)*
 
 ### Frontend Shell
 
@@ -86,17 +86,17 @@ A clean checkout can start the documented local services, apply the baseline dat
 
 ### Configuration And Data Safety
 
-- **FR-BOOT-10:** Runtime, database, upload-root, chat, embedding, and OCR settings are externalized in an English `.env.example` containing placeholders only. *(Source: US-BOOT-005)*
-- **FR-BOOT-11:** Embedding and OCR base URLs are rejected when they do not resolve to the configured intranet/gateway allowlist. *(Source: US-BOOT-005)*
+- **FR-BOOT-10:** Runtime, database, upload-root, chat, embedding, OCR, and allowlist settings are externalized in an English `.env.example` containing placeholders only, including a default allowlist that accepts the documented placeholder gateway host. *(Source: US-BOOT-005)*
+- **FR-BOOT-11:** Embedding and OCR base URL hosts are validated by literal hostname (or `host:port`) match against the configured intranet/gateway allowlist. Empty hosts and non-allowlisted hosts are rejected. Validation does not perform DNS resolution and makes no outbound request. *(Source: US-BOOT-005)*
 - **FR-BOOT-12:** Chat configuration is provider-neutral and does not hard-code a public vendor; provider CRUD and user switching remain outside this slice. *(Source: US-BOOT-005)*
 
 ## Non-Functional Requirements
 
-- **Security:** No secrets, passwords, tokens, upload corpora, or runtime logs enter Git. Embedding/OCR public endpoints are rejected. *(Source: `SEC-02`, `SEC-03`, `SEC-08`, `SEC-09`, `SEC-11`)*
+- **Security:** No secrets, passwords, tokens, upload corpora, or runtime logs enter Git. Embedding/OCR public endpoints are rejected by allowlist host match. Liveness/readiness are an explicit infrastructure exception to product `SEC-01`: they are unauthenticated and must remain on the Compose/service network boundary, not a public business route. *(Source: `SEC-01` exception via ADR-0005, `SEC-02`, `SEC-03`, `SEC-08`, `SEC-09`, `SEC-11`)*
 - **Reliability:** Readiness is dependency-aware, migration reapplication is safe, and gateway outage does not make the bootstrap health contract claim a false gateway status. *(Source: `NFR-06`, `D-07`)*
-- **Environment support:** The documented local environment is Docker Compose with `web`, `api`, and `postgres`; no on-host OCR or embedding service is added. *(Source: `NFR-05`)*
-- **Observability:** Health responses distinguish process, database, migration, and configuration state using safe diagnostic codes. `[INFERRED]`
-- **Performance:** The shell-to-health smoke path should complete under normal local conditions without blocking on gateway calls. `[INFERRED]`
+- **Environment support:** The documented local environment is Docker Compose via `deploy/docker-compose.yml` with `web`, `api`, and `postgres`; no on-host OCR or embedding service is added. *(Source: `NFR-05`)*
+- **Observability:** Health responses distinguish process, configuration, database, migration, and vector-capability state using secret-safe diagnostic codes.
+- **Performance:** The shell-to-readiness smoke path should complete under normal local conditions without blocking on gateway calls.
 
 ## Workflow / System Flow
 
@@ -132,9 +132,9 @@ flowchart TD
 2. The runtime starts the database, API, and web services with the documented Compose topology.
 3. The database migration baseline is applied or confirmed.
 4. The API exposes liveness independently from dependency readiness.
-5. Readiness checks the database connection, migration state, and configuration validation. It does not call the model gateway.
-6. The frontend shell loads and requests the API health state through its typed client boundary.
-7. Invalid configuration, missing database capability, failed migration, or API unavailability are shown as explicit safe failure states.
+5. Readiness checks configuration validation, database connection, migration state, and vector capability. It returns HTTP 200 only when all are ready, otherwise HTTP 503. It does not call the model gateway.
+6. The frontend shell loads and requests API readiness through its typed client boundary.
+7. Invalid configuration, missing vector capability, failed migration, HTTP 503 not-ready, or API unavailability are shown as explicit secret-safe failure states.
 
 ## Data / Configuration Requirements
 
@@ -155,19 +155,21 @@ No business entities are created in this slice. User, document, chunk, session, 
 - Chat settings: internal gateway base URL/model placeholder and secret placeholder.
 - Embedding settings: internal gateway base URL, model ID, vector dimension, and secret placeholder.
 - OCR settings: internal gateway base URL, model/path, timeout placeholder, and secret placeholder.
-- Boundary setting: intranet/gateway host allowlist used for embedding/OCR validation.
+- Boundary setting: intranet/gateway host allowlist used for embedding/OCR validation. Default local value includes the documented placeholder host (for example `gateway.internal`).
 
 **Statuses / state machine:**
 
 - Liveness: `alive` or `not-running`.
-- Readiness: `ready` or `not-ready` with component diagnostics for `database`, `migration`, and `configuration`.
+- Readiness: `ready` (HTTP 200) or `not-ready` (HTTP 503) with component diagnostics for `configuration`, `database`, `migration`, and `vector_capability`.
+- Frontend display: `loading`, `ready`, `needs_attention` (HTTP 503), or `unreachable` (transport failure).
 - Configuration validation: `valid` or `invalid`.
 
 **Validation rules:**
 
 - Required local settings must be present and parseable.
-- Embedding/OCR URLs must match the intranet/gateway allowlist.
-- Public chat URLs are not treated as embedding/OCR URLs.
+- Embedding/OCR URL hosts must literally match an allowlist entry (hostname or `host:port`). Empty hosts are invalid.
+- Allowlist validation does not perform DNS resolution and does not make outbound requests.
+- Public chat URLs are not treated as embedding/OCR URLs and are not validated by the embedding/OCR allowlist in this slice.
 - Secret values are never returned in health responses or logs.
 
 ## Integrations
@@ -197,7 +199,7 @@ No business entities are created in this slice. User, document, chunk, session, 
 **Upstream dependencies**
 
 - Product specification v0.1.5.
-- ADR-0002 and ADR-0004.
+- ADR-0002, ADR-0004, and ADR-0005.
 - Backend and frontend standards.
 
 **Downstream dependencies**
@@ -212,7 +214,7 @@ No business entities are created in this slice. User, document, chunk, session, 
 |---|---|---|---|---|
 | R-BOOT-01 | The approved PostgreSQL/pgvector image tag is not known. | Gap | Medium | Resolve OQ-BOOT-02 before reproducible pilot deployment; use a documented local tag for development only. |
 | R-BOOT-02 | Concrete gateway URLs and model identifiers are unresolved. | Gap | Medium | Keep bootstrap config placeholder-only; resolve OQ-09 before adapter smoke tests. |
-| R-BOOT-03 | Health probe exposure is not yet separated from the API port. | Unclear | Low | Keep probes network-restricted and resolve OQ-BOOT-01 before deployment hardening. |
+| R-BOOT-03 | Health probe exposure is not yet separated from the API port. | Unclear | Low | Keep probes on the Compose/service network only for local bootstrap; resolve OQ-BOOT-01 before pilot deployment hardening. |
 | R-BOOT-04 | No UI component library is designated. | Gap | Low | Use plain Vue and CSS variables in this slice; resolve product OQ-04 before adding a library. |
 
 ## Out of Scope

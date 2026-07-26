@@ -9,7 +9,7 @@
 | Date | 2026-07-26 |
 | Product version | Quarry KB v0.1 |
 | Source | `docs/01-requirements/quarry-kb-product-spec-v0.1.md` |
-| Related ADRs | ADR-0002, ADR-0004 |
+| Related ADRs | ADR-0002, ADR-0004, ADR-0005 |
 
 ## Goal Contract
 
@@ -45,37 +45,40 @@
 ### Configuration And Boundary Safety
 
 - **REQ-BOOT-005:** An English `.env.example` shall document runtime, database, upload-root, internal chat, embedding, and OCR configuration placeholders without containing real secrets.
-- **REQ-BOOT-006:** Embedding and OCR base URLs shall be validated against the configured intranet/gateway allowlist. Public URLs shall be rejected before any outbound request is made.
+- **REQ-BOOT-006:** Embedding and OCR base URLs shall be validated against the configured intranet/gateway allowlist using literal hostname (or `host:port`) matching of the URL host. Validation shall not perform DNS resolution. Empty embedding/OCR URLs are invalid. Public hosts shall be rejected before any outbound request is made. Local placeholder hosts documented in `.env.example` must be present on the default allowlist so bootstrap verification does not require a live gateway.
 - **REQ-BOOT-007:** Chat configuration shall support an internal gateway placeholder and later Admin-configured public OpenAI-compatible providers without hard-coding a vendor. Bootstrap shall not implement provider CRUD.
 - **REQ-BOOT-008:** Real passwords, API keys, JWT signing material, uploaded files, internal screenshots, and runtime logs shall remain outside Git.
 
 ### Verification And Operability
 
 - **REQ-BOOT-009:** The documented local verification path shall cover Compose configuration, API tests, migration smoke, frontend build, and a frontend-to-backend health check.
-- **REQ-BOOT-010:** Startup and readiness failures shall expose actionable, non-secret-safe diagnostics and shall not claim gateway health when no gateway call was made.
+- **REQ-BOOT-010:** Startup and readiness failures shall expose actionable, secret-safe diagnostics and shall not claim gateway health when no gateway call was made.
 
 ## Acceptance Criteria
 
-1. **Given** the repository's documented prerequisites are installed, **when** a developer runs the documented Compose startup command, **then** `web`, `api`, and `postgres` start with health checks and no source-controlled secret is required.
-2. **Given** the API process is running but PostgreSQL is unavailable, **when** the liveness probe is called, **then** it reports process liveness without falsely reporting database readiness.
-3. **Given** PostgreSQL is available and the baseline migration has completed, **when** the readiness probe is called, **then** it reports database and migration readiness without making an external gateway request.
-4. **Given** an embedding or OCR URL is outside the configured intranet/gateway allowlist, **when** configuration is loaded or validated, **then** startup fails with a safe configuration error and no public request is attempted.
-5. **Given** a developer opens the web service, **when** the shell requests API health, **then** the shell displays a typed success or failure state rather than logging raw credentials or silently swallowing the error.
-6. **Given** the migration baseline is applied twice, **when** the second migration run occurs, **then** it completes idempotently without creating duplicate application state.
-7. **Given** only mock or placeholder configuration is present, **when** the verification commands run, **then** they do not require live gateway credentials or real company documents.
+1. **AC-BOOT-01:** **Given** the repository's documented prerequisites are installed, **when** a developer runs the documented Compose startup command (`docker compose -f deploy/docker-compose.yml up --build`), **then** `web`, `api`, and `postgres` start with health checks and no source-controlled secret is required.
+2. **AC-BOOT-02:** **Given** the API process is running but PostgreSQL is unavailable, **when** the liveness probe is called, **then** it reports process liveness without falsely reporting database readiness.
+3. **AC-BOOT-03:** **Given** PostgreSQL is available and the baseline migration has completed, **when** the readiness probe is called, **then** it returns HTTP 200 with ready component states for configuration, database, migration, and vector capability, without making an external gateway request.
+4. **AC-BOOT-04:** **Given** an embedding or OCR URL host is outside the configured intranet/gateway allowlist, **when** configuration is loaded or validated, **then** readiness fails with a safe configuration error and no public request is attempted.
+5. **AC-BOOT-05:** **Given** a developer opens the web service, **when** the shell requests API readiness, **then** the shell displays a typed ready, needs-attention (HTTP 503), or unreachable state rather than logging raw credentials or silently swallowing the error.
+6. **AC-BOOT-06:** **Given** the migration baseline is applied twice, **when** the second migration run occurs, **then** it completes idempotently without creating duplicate application state.
+7. **AC-BOOT-07:** **Given** only mock or placeholder configuration from `.env.example` is present, **when** the verification commands run, **then** they do not require live gateway credentials or real company documents.
 
 ## Assumptions
 
 - The repository remains greenfield; no existing application API, table, component, or runtime behavior is inherited.
 - The local Compose deployment is the first supported environment; staging and production hardening are later work.
-- Health probes are infrastructure probes and are reachable only through the service/deployment boundary, not a user-facing business route.
-- Exact gateway URLs, models, OCR path, and rate limits remain OQ-09 deployment inputs.
+- Health probes are infrastructure probes and are an explicit exception to product `SEC-01`. They remain unauthenticated and must be reachable only through the Compose/service network boundary (not published as a public business route). See ADR-0005.
+- Exact gateway URLs, models, OCR path, and rate limits remain OQ-09 deployment inputs. Bootstrap uses documented placeholder hosts on the default allowlist.
+- The Compose file path is `deploy/docker-compose.yml`.
 - Plain Vue + CSS variables is used until a UI library ADR exists.
+- The Alembic baseline enables and verifies the PostgreSQL `vector` extension; it creates no business tables.
 
 ## Dependencies
 
 - ADR-0002 for the technology and runtime boundary.
 - ADR-0004 for gateway configuration and egress rules.
+- ADR-0005 for allowlist matching, SEC-01 probe exception, and readiness HTTP semantics.
 - Backend and frontend standards.
 - Docker and a PostgreSQL/pgvector-compatible image available to the local environment.
 
