@@ -38,7 +38,7 @@ flowchart LR
 
 | Stage | Current status | Evidence / gap |
 |---|---|---|
-| P0 Product baseline | `In progress` | Product specification v0.1.5, positioning, prototype, and project rules exist. Slice-level SDD artifacts and a fixed evaluation question set are still missing. |
+| P0 Product baseline | `In progress` | Product specification v0.1.5, positioning, prototype, fixed evaluation question set, gateway boundary ADR, and a draft `repo-bootstrap` SDD chain exist. Document-quality review is `Ready with minor fixes`; product/slice acceptance is still pending. |
 | P1 Engineering foundation | `Not started` | Application scaffolding is not present. |
 | P2 Identity and authorization | `Not started` | No backend or frontend implementation. |
 | P3 Knowledge ingestion | `Not started` | No parser, OCR, embedding, or worker implementation. |
