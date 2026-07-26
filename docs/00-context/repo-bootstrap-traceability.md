@@ -6,8 +6,8 @@
 |---|---|
 | Slice | `repo-bootstrap` |
 | Goal | Start and verify the FastAPI/Vue/PostgreSQL foundation with safe gateway boundaries. |
-| Status | Implemented in workspace — awaiting product-owner acceptance for P0/P1 stage completion |
-| Implementation boundary | Code applied under change package `docs/00-context/changes/20260726-repo-bootstrap/` after freshness-gate pass. |
+| Status | Verified in workspace — product-owner acceptance and P1 runtime gate recorded |
+| Implementation boundary | Initial code applied under change package `docs/00-context/changes/20260726-repo-bootstrap/` after freshness-gate pass; current review recheck includes a minimal Compose remediation. |
 
 ## Source → Requirement Mapping
 
@@ -87,9 +87,23 @@
 - [x] Remediation review recorded in `docs/reviews/repo-bootstrap-sdd-quality.md`.
 - [x] Execution manifest + freshness-gate evidence recorded in `docs/00-context/changes/20260726-repo-bootstrap/`.
 - [x] Dockerless implementation verification passed (pytest, frontend build, compose YAML parse, local health smoke).
-- [ ] Product owner accepts v0.1 scope and this slice.
-- [ ] Docker/Postgres Compose migration smoke in a Docker-capable environment.
-- [ ] P0/P1 stage gates marked complete only after owner acceptance + runtime smoke.
+- [x] Product owner accepts v0.1 scope and this slice (accepted in the independent review session on 2026-07-26).
+- [x] Docker/Postgres Compose migration smoke in a Docker-capable environment.
+- [x] P0/P1 stage gates marked complete after owner acceptance + runtime smoke.
+
+## Acceptance And Verification Recheck
+
+| Field | Value |
+|---|---|
+| Recheck date | 2026-07-26 |
+| Acceptance | Product owner accepted the v0.1 scope and `repo-bootstrap` slice in the review session. |
+| Runtime evidence | Docker Compose started `web`, `api`, and `postgres`; all services reported healthy after the minimal Compose remediation. |
+| Migration evidence | Alembic baseline applied and reapplied successfully; database contained only `alembic_version` and the `vector` extension. |
+| API evidence | Web-proxied liveness returned HTTP 200; readiness returned HTTP 200 when ready and HTTP 503 with `DATABASE_NOT_READY` plus all four components when PostgreSQL was stopped. |
+| Frontend evidence | Production build and web-to-API readiness HTTP smoke passed. |
+| Scope evidence | No authentication, ingestion, retrieval, chat, provider, audit, real secrets, or real corpora were added. |
+
+The archived manifest and original change review remain historical evidence for the earlier apply. This recheck records the later Docker-capable verification and does not convert the archived manifest into an active handoff.
 
 ## Scope Boundary
 

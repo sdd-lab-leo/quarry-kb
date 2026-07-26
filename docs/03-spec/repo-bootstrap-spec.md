@@ -1,7 +1,7 @@
 # Feature Specification: Repository Bootstrap
 
 > **Source stories:** US-BOOT-001 through US-BOOT-005  
-> **Spec status:** Draft  
+> **Spec status:** Accepted
 > **Last updated:** 2026-07-26
 
 ## Overview
@@ -230,4 +230,3 @@ No business entities are created in this slice. User, document, chunk, session, 
 | OQ-BOOT-01 | Should probes use a private management port? | Requirement | Platform |
 | OQ-BOOT-02 | Which PostgreSQL/pgvector image tag is approved? | Requirement | Platform |
 | OQ-09 | What are the exact internal gateway URLs, models, OCR path, and rate limits? | Product specification | Platform / Model gateway owner |
-

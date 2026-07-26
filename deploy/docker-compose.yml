@@ -22,12 +22,24 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     environment:
+      APP_ENV: ${APP_ENV:-local}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      API_HOST: ${API_HOST:-0.0.0.0}
+      API_PORT: ${API_PORT:-8000}
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://quarry:change-me-local-only@postgres:5432/quarry_kb}
       UPLOAD_ROOT: ${UPLOAD_ROOT:-/data/uploads}
       GATEWAY_HOST_ALLOWLIST: ${GATEWAY_HOST_ALLOWLIST:-gateway.internal}
       CHAT_BASE_URL: ${CHAT_BASE_URL:-http://gateway.internal/v1}
+      CHAT_MODEL: ${CHAT_MODEL:-placeholder-chat-model}
+      CHAT_API_KEY: ${CHAT_API_KEY:-replace-me}
       EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-http://gateway.internal/v1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-placeholder-embedding-model}
+      EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-1536}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-replace-me}
       OCR_BASE_URL: ${OCR_BASE_URL:-http://gateway.internal/v1}
+      OCR_MODEL_PATH: ${OCR_MODEL_PATH:-/v1/ocr}
+      OCR_TIMEOUT_SECONDS: ${OCR_TIMEOUT_SECONDS:-120}
+      OCR_API_KEY: ${OCR_API_KEY:-replace-me}
     volumes:
       - quarry_uploads:/data/uploads
     depends_on:
@@ -50,6 +62,11 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     ports:
       - "8080:80"
     networks:

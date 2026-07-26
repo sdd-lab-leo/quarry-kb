@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Slice | `repo-bootstrap` |
-| Status | Draft — P0 proposal |
+| Status | Accepted — P1 implementation slice |
 | Date | 2026-07-26 |
 | Product version | Quarry KB v0.1 |
 | Source | `docs/01-requirements/quarry-kb-product-spec-v0.1.md` |
@@ -97,4 +97,3 @@
 | OQ-BOOT-01 | Should health probes be exposed on a private management port in the pilot, or only on the API port with network restriction? | Platform | Changes deployment exposure, not application behavior. |
 | OQ-BOOT-02 | What exact PostgreSQL/pgvector image tag is approved for the pilot? | Platform | Needed to pin Compose reproducibly. |
 | OQ-09 | What are the internal gateway base URLs, model IDs, OCR path, and rate limits? | Platform / Model gateway owner | Needed for real adapter smoke tests in later slices; placeholders are sufficient for bootstrap. |
-

@@ -5,7 +5,7 @@
 | Field | Value |
 |---|---|
 | Slice | `repo-bootstrap` |
-| Status | Draft |
+| Status | Accepted |
 | Date | 2026-07-26 |
 | Source | `docs/01-requirements/repo-bootstrap-requirement.md` |
 
@@ -161,4 +161,3 @@ so that later model integrations cannot accidentally send embedding or OCR data 
 ## Open Questions
 
 - OQ-09 controls later adapter smoke-test values and rate limits.
-
