@@ -133,3 +133,15 @@ Preserve:
 2. Modified files and key changes
 3. Current verification status (pass/fail commands)
 4. Open risks, TODOs, rollback notes
+
+## Cursor Cloud specific instructions
+
+Current repo state: this is a docs / SDD governance repository. `backend/`, `frontend/`, and `deploy/` are intentionally empty (`.gitkeep` only) and there are **no** dependency manifests (`requirements.txt`, `package.json`, lockfiles), no CI, and no configured linters yet. The "Build And Test" / "Verification" commands above are placeholders that only apply once app scaffolding exists — do not expect them to run today, and do not scaffold the app without an approved SDD slice.
+
+Preinstalled toolchain (no install step needed for current artifacts): Python 3.12, Node 22, npm 10, jq. The update script is effectively a no-op today; it only installs deps once `backend/requirements.txt` or `frontend/package.json` appear.
+
+Runnable artifacts that exist today (all zero-dependency):
+
+- Doc governance scanner (repo's core tooling): `python3 .agents/skills/review-docs-against-code/scripts/doc_consistency_scan.py --root . README.md AGENTS.md docs`. Pure stdlib; add `--json` for machine-readable output. Flagged "missing file-like references" are expected — docs reference intended/future files.
+- Product prototype (static mock UI, no build/server framework): serve with `python3 -m http.server 8080` from `docs/01-requirements/prototypes/`, then open `http://localhost:8080/index.html`. It is a self-contained mock (login → Ask → Knowledge → Document detail → Admin); never wire it to real services.
+- Execution-manifest schema is plain JSON: validate with `python3 -m json.tool docs/00-context/execution-manifest.schema.json`.
