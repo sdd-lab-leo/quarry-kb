@@ -69,9 +69,9 @@ The source product specification defines phase-one password authentication with 
 | REQ-AUTH-010 | A role change is used on the next authorization check and does not depend on a stale role claim in an already-issued token. | FR-51 | Must |
 | REQ-AUTH-011 | Only the login and infrastructure health endpoints are unauthenticated; future business endpoints require a valid active-user token. | SEC-01, ADR-0005 | Must |
 | REQ-AUTH-012 | Authentication errors use the P0 response envelope and do not reveal whether a submitted identifier exists. | SEC-02, security baseline | Must |
-| REQ-AUTH-013 | The frontend can restore a valid session, show the current user and role, and discard the token on logout or authentication failure. | FR-01, FR-07, frontend standard | Should |
+| REQ-AUTH-013 | The frontend can restore a valid session, show the current user and role, and discard the token on logout or authentication failure. | FR-01, FR-07, frontend standard | Must |
 | REQ-AUTH-014 | The system must reject any Admin operation that would deactivate or demote the last remaining active Admin. | Operational safety; ADR-0006 | Must |
-| REQ-AUTH-015 | The first Admin is created by a one-time runtime env bootstrap that runs only when zero Admin accounts exist. | OQ-AUTH-002 / ADR-0006 | Must |
+| REQ-AUTH-015 | The first Admin shall be created by a one-time runtime env bootstrap that runs only when zero Admin accounts exist. | OQ-AUTH-002 / ADR-0006 | Must |
 
 ## Acceptance Criteria
 
@@ -92,9 +92,9 @@ The source product specification defines phase-one password authentication with 
 
 | ID | Question | Proposed default pending owner confirmation | Impact |
 |---|---|---|---|
-| OQ-AUTH-001 | What is the pilot password policy? | Minimum 12 characters; no forced complexity regex; reject blank/whitespace-only values. | Validation and onboarding UX |
-| OQ-AUTH-002 | How is the first Admin bootstrapped? | One-time startup bootstrap from runtime env vars `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER`, `AUTH_BOOTSTRAP_ADMIN_PASSWORD`, and optional `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME`. Runs only when zero Admin accounts exist; never uses a committed default password; ignored after any Admin exists. | First-run operability and secret handling |
-| OQ-AUTH-003 | How long should access JWTs live? | 30-minute access token; no refresh token in this slice. | Session UX and security posture |
+| OQ-AUTH-001 | What is the pilot password policy, and how should policy-invalid values be handled at login versus account creation/bootstrap? | Proposed default: minimum 12 characters, at least one non-whitespace character, no forced complexity regex, and case-sensitive passwords. Enforce the policy for new account/bootstrap credentials; for structurally valid login credentials, prefer the same generic authentication failure category rather than a policy-specific account-disclosure signal. | Validation, login error semantics, and onboarding UX |
+| OQ-AUTH-002 | How is the first Admin bootstrapped, including concurrent startup and invalid/missing bootstrap configuration? | Proposed default: one-time startup bootstrap from runtime env vars `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER`, `AUTH_BOOTSTRAP_ADMIN_PASSWORD`, and optional `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME`; the zero-Admin check and create must be serialized transactionally so concurrent starts produce at most one Admin; bootstrap is ignored after any Admin exists and never uses a committed default password. Recommended safe failure behavior is to create no Admin and fail closed when required bootstrap values are missing/invalid; owner/security confirmation is still required. | First-run operability, concurrency, and secret handling |
+| OQ-AUTH-003 | How long should access JWTs live and how should expiry be represented? | Proposed default: 30-minute access token; required `iat`/`exp` claims use UTC time, `expires_at` mirrors `exp`, and no refresh token is provided in this slice. | Session UX and security posture |
 | OQ-AUTH-004 | Where should the browser hold the access token? | In-memory state with `sessionStorage` as the reload fallback; never `localStorage`. | Reload behavior and XSS exposure |
 | OQ-AUTH-005 | What account identifier normalization is required? | Trim and lowercase for lookup/uniqueness; length 3–64; allowed pattern `[a-z0-9._@-]+` after normalization; preserve display name separately; passwords remain case-sensitive. | Login and uniqueness behavior |
 

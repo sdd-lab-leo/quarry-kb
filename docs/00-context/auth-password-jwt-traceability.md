@@ -6,7 +6,7 @@
 |---|---|
 | Slice | `auth-password-jwt` |
 | Goal | Establish local identity, JWT access sessions, Admin account lifecycle, and current-role server authorization. |
-| Status | Draft; remediated after independent SDD review; awaiting owner/security confirmation of ADR-0006 and implementation handoff manifest. |
+| Status | Draft; remediated after independent SDD review and this audit; awaiting owner/security confirmation of ADR-0006 and implementation handoff manifest. |
 | Upstream | Product specification v0.1.5, ADR-0002, ADR-0005, proposed ADR-0006, verified `repo-bootstrap`. |
 | Downstream | `knowledge-ingest`, `ask-rag`, `chat-providers`, and `audit-minimal`. |
 
@@ -18,7 +18,7 @@
 | Entry skill | `.agents/skills/wwa-sdd-generate-all/SKILL.md` (original generation); remediation guided by `review-doc-quality` findings |
 | Downstream skills read during generation/remediation | `req-to-user-story`, `user-story-to-spec`, `spec-to-architecture`, `architecture-to-design`, `design-to-tasks`, `review-doc-quality`, `context-engineering-adr` |
 | ADR created/updated | ADR-0006 proposed for pilot auth security defaults; ADR-0002/0005 reused |
-| `review-doc-quality` result | Independent review verdict was **PASS WITH FIXES**; this remediation addresses Critical/Major findings before implementation handoff |
+| `review-doc-quality` result | Historical independent review was **PASS WITH FIXES**. Current audit is recorded in [`docs/reviews/auth-password-jwt-sdd-quality.md`](../reviews/auth-password-jwt-sdd-quality.md) as **PASS WITH FIXES**; it does not approve implementation or ADR-0006. |
 
 ## Source → Requirements
 
@@ -88,7 +88,7 @@
 | REQ-AUTH-008/011; AC-AUTH-004 | Protected-route tests, health exception smoke, forbidden checks |
 | REQ-AUTH-012/013; AC-AUTH-006/008 | Safe projections, frontend build/UI tests, `401`/`403` session mapping |
 | REQ-AUTH-014; AC-AUTH-009 | Last-Admin demotion/deactivation rejection tests |
-| REQ-AUTH-015; AC-AUTH-010 | Bootstrap-once env tests |
+| REQ-AUTH-015; AC-AUTH-010 | Bootstrap-once, concurrent-start, existing-Admin, and missing/invalid-env tests |
 
 ## Product Boundary and Naming Note
 

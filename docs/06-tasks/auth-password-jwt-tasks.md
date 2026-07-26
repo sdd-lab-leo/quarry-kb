@@ -65,7 +65,7 @@ The critical path is TASK-AUTH-001 → TASK-AUTH-008 → TASK-AUTH-002 → TASK-
 ### TASK-AUTH-001: Accept and Pin Authentication Defaults
 
 - **Objective:** Remove implementation ambiguity before code starts.
-- **Scope:** Confirm or amend password policy, first-Admin bootstrap env contract, JWT lifetime/algorithm, browser token storage, identifier normalization, Argon2id hashing baseline, mandatory `auth_version`, and last-Admin protection; accept or amend ADR-0006; update this SDD set if amended.
+- **Scope:** Confirm or amend password policy and login-validation semantics, first-Admin bootstrap env/concurrency/failure contract, JWT lifetime/algorithm/key source/claims, browser token storage, identifier normalization, Argon2id hashing baseline, internal user ID type, mandatory `auth_version`, request-error envelope, and last-Admin protection; accept or amend ADR-0006; update this SDD set if amended.
 - **Dependencies:** None.
 - **Owner type:** product / security / architecture
 - **Priority:** Must
@@ -109,7 +109,7 @@ The critical path is TASK-AUTH-001 → TASK-AUTH-008 → TASK-AUTH-002 → TASK-
 - **Dependencies:** TASK-AUTH-003.
 - **Owner type:** backend
 - **Priority:** Must
-- **Verification:** API tests for login, bootstrap-once behavior, `/auth/me`, `401`, deactivation, token expiry, auth-version mismatch after reactivation, and health probe access without token.
+- **Verification:** API tests for login, request-validation envelope, bootstrap-once and concurrent-start behavior, missing/invalid bootstrap configuration, `/auth/me`, `401`, deactivation, token expiry, auth-version mismatch after reactivation, and health probe access without token.
 - **Definition of done:** Active users can obtain and use a token; invalid/inactive/version-mismatched sessions fail closed; bootstrap cannot recreate Admin after one exists.
 
 ### TASK-AUTH-005: Implement Admin Account Lifecycle and Role Authorization
@@ -119,7 +119,7 @@ The critical path is TASK-AUTH-001 → TASK-AUTH-008 → TASK-AUTH-002 → TASK-
 - **Dependencies:** TASK-AUTH-004.
 - **Owner type:** backend
 - **Priority:** Must
-- **Verification:** Role matrix tests for Admin/Editor/Viewer, create/list/update/deactivate/reactivate flows, forbidden data access, and last-Admin protection.
+- **Verification:** Role matrix tests for Admin/Editor/Viewer, create/list/update/deactivate/reactivate flows, forbidden data access, serialized last-Admin protection, and exactly-one-role persistence.
 - **Definition of done:** Admin operations are server-authorized and the current role/status is authoritative.
 
 ### TASK-AUTH-006: Add Frontend Session, Login, And Admin Surfaces

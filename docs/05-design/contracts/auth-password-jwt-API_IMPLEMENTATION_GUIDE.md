@@ -43,7 +43,7 @@ The server must not echo or log the header value.
 | `auth_version` | Yes | Mandatory invalidation claim; must match current User row. |
 | `role` | No | Display convenience only; never authorization source of truth. |
 
-Proposed defaults (ADR-0006): 30-minute expiry, HS256 runtime secret, no refresh token. Pending owner/security acceptance.
+Proposed defaults (ADR-0006): 30-minute expiry, HS256 with runtime environment secret `JWT_SIGNING_KEY`, UTC `iat`/`exp` claims, and no refresh token. Pending owner/security acceptance.
 
 ## Shared `UserSummary`
 
@@ -62,6 +62,8 @@ All user projections use the same allowlisted shape:
 ```
 
 Never include `password_hash`, `external_subject`, `auth_version`, JWT values, or secret settings.
+
+The `<uuid>` values in examples reflect the current proposed internal-ID shape only; the identifier type remains a TASK-AUTH-001 decision and is not an approval.
 
 ## Error Response Format
 
@@ -87,6 +89,8 @@ Never include `password_hash`, `external_subject`, `auth_version`, JWT values, o
 | `LAST_ADMIN_REQUIRED` | 409 | Operation would deactivate or demote the last active Admin. |
 | `VALIDATION_ERROR` | 422 | Request field validation failed. |
 | `USER_NOT_FOUND` | 404 | Admin target does not exist. |
+
+FastAPI request-validation failures and authentication-dependency failures must be normalized into this same P0 envelope. Unexpected server/dependency failures use a safe 5xx envelope; the stable 5xx code and operator-facing message must be pinned before implementation and must not expose raw exception details.
 
 ## API Endpoints Summary
 
@@ -139,8 +143,8 @@ Success response, HTTP 200:
 
 Validation/error cases:
 
-- `422 VALIDATION_ERROR` for missing/empty fields, identifier rule failures, or failed password policy input.
-- `401 AUTHENTICATION_FAILED` for unknown, wrong, or inactive credentials.
+- `422 VALIDATION_ERROR` for missing/empty request fields or identifier rule failures.
+- For structurally valid non-empty credentials, unknown identifier, wrong password, and inactive account all return `401 AUTHENTICATION_FAILED` with the same safe category. Whether login should separately reject policy-invalid password values remains OQ-AUTH-001; new-account/bootstrap policy validation is distinct.
 - Never return password hash, raw password, `auth_version`, or token diagnostics.
 
 ### Current user
@@ -246,9 +250,12 @@ Runtime env vars (never committed with real secrets):
 
 Bootstrap runs only when zero Admin accounts exist and creates exactly one active Admin.
 
+The zero-Admin check and create must be serialized transactionally. Concurrent starts have one winner; losing and repeated starts observe an existing Admin and ignore the bootstrap variables. If required bootstrap variables are missing or invalid, the recommended default is to create no Admin and fail closed; this behavior remains pending OQ-AUTH-002 confirmation.
+
 ## Concurrency
 
 - User updates are transactional.
+- Bootstrap and last-Admin checks are serialized with their mutations so concurrent starts cannot create duplicate Admins and concurrent Admin updates cannot leave zero active Admins.
 - Duplicate identifiers are handled as a stable `409` conflict.
 - Concurrent Admin edits rely on transaction serialization for the pilot; no client precondition header is required in this slice.
 - Authorization reads current role/status/`auth_version` after the token is validated.
@@ -256,7 +263,7 @@ Bootstrap runs only when zero Admin accounts exist and creates exactly one activ
 ## Integration Dependencies
 
 - PostgreSQL user table and Alembic migration from `20260726_0001`.
-- Runtime JWT key and HS256 algorithm settings.
+- Runtime `JWT_SIGNING_KEY` and HS256 algorithm settings.
 - Argon2id password hashing adapter.
 - P0 envelope and redaction behavior.
 - Proposed ADR-0006 pilot auth security defaults.

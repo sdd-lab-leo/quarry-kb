@@ -17,7 +17,7 @@ As an active Quarry KB user, I want to log in with my account identifier and pas
 1. **Given** an active account and correct password
    **When** the user submits the login form
    **Then** the API returns a bearer access token and safe current-user identity data.
-2. **Given** an unknown identifier, wrong password, or deactivated account
+2. **Given** structurally valid credentials with an unknown identifier, wrong password, or deactivated account
    **When** the user submits credentials
    **Then** the API returns the same safe authentication failure category without revealing which condition occurred.
 3. **Given** a successful login
@@ -64,8 +64,8 @@ As an Admin, I want to create, list, activate, deactivate, and assign roles to a
    **When** an Admin attempts to deactivate or demote that Admin
    **Then** the API rejects the change and the last Admin remains active with role `Admin`.
 6. **Given** zero Admin accounts exist and valid bootstrap env vars are configured
-   **When** the application starts
-   **Then** exactly one active Admin is created and later startups do not recreate bootstrap Admins.
+   **When** one or more application instances start concurrently
+   **Then** the serialized bootstrap check creates exactly one active Admin, losing/repeated startups ignore the bootstrap configuration, and no committed default password is used.
 
 ### Notes / Assumptions
 
@@ -84,7 +84,7 @@ As an Admin, I want to create, list, activate, deactivate, and assign roles to a
 
 ### Open Questions
 
-- Confirm ADR-0006 / OQ-AUTH-002 bootstrap env contract before implementation.
+- Confirm ADR-0006 / OQ-AUTH-002 bootstrap env contract, including concurrent-start and missing/invalid-env behavior, before implementation.
 
 ## Story US-AUTH-003: Enforce Current Server-Side Authorization
 

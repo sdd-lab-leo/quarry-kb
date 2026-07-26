@@ -28,13 +28,13 @@ No existing User model, auth router, password adapter, JWT signer, or business m
 
 ## Design Assumptions
 
-- `[DEFAULT]` Use an internal UUID user ID.
+- `[PROPOSED — TASK-AUTH-001]` Use an internal UUID user ID; this type is not decided by ADR-0006.
 - `[DEFAULT]` Use an access JWT with `sub`, `iat`, `exp`, and mandatory `auth_version`; current role/status are loaded from PostgreSQL for authorization.
-- `[DEFAULT]` Use HS256 with a runtime secret for the single-host pilot; do not expose the secret through settings APIs.
+- `[DEFAULT]` Use HS256 with runtime environment secret `JWT_SIGNING_KEY` for the single-host pilot; do not expose the secret through settings APIs.
 - `[DEFAULT]` Use 30-minute access-token lifetime and no refresh-token endpoint.
 - `[DEFAULT]` Store the browser token in memory with `sessionStorage` fallback; never `localStorage`.
 - `[DEFAULT]` Admin supplies an initial password when creating an account; password reset is out of scope.
-- `[DEFAULT]` Password hashing uses Argon2id.
+- `[DEFAULT]` New account/bootstrap passwords use Argon2id and the proposed 12-character/non-whitespace policy; login error handling for policy-invalid values remains OQ-AUTH-001.
 - `[DEFAULT]` First Admin is created from `AUTH_BOOTSTRAP_ADMIN_*` env vars only when zero Admins exist.
 - `[DEFAULT]` Last active Admin cannot be deactivated or demoted.
 
@@ -63,7 +63,7 @@ No business content routes, audit persistence, SSO, password recovery, provider 
 
 - Accept credentials only at `POST /api/v1/auth/login`.
 - Map the service result to the P0 envelope.
-- Return `401 AUTHENTICATION_FAILED` for unknown, invalid, or inactive credentials.
+- Return `401 AUTHENTICATION_FAILED` for structurally valid unknown, invalid, or inactive credentials; request-shape failures use `422 VALIDATION_ERROR` in the same P0 envelope.
 - Never pass raw password values into logs, exception text, or response models.
 
 ### Current-user and authorization dependency
@@ -78,9 +78,9 @@ No business content routes, audit persistence, SSO, password recovery, provider 
 
 ### First-Admin bootstrap
 
-- On startup, if zero Admin accounts exist and bootstrap env vars are present, create one active Admin.
-- Validate password policy before create; fail closed on invalid bootstrap password.
-- If any Admin already exists, ignore bootstrap env vars.
+- On startup, serialize the zero-Admin check and create so concurrent starts have one winner; if zero Admin accounts exist and bootstrap env vars are present, create one active Admin.
+- Validate the proposed password policy before create; fail closed on invalid bootstrap password is the recommended default pending OQ-AUTH-002 confirmation.
+- If any Admin already exists, ignore bootstrap env vars, including when the existing Admin is deactivated.
 - Never commit default bootstrap passwords.
 
 ### Account administration service
@@ -110,7 +110,7 @@ No business content routes, audit persistence, SSO, password recovery, provider 
 
 - `issue(user_id, auth_version, now, expiry) -> encoded_token`
 - `verify(encoded_token, now) -> token_claims`
-- Reject algorithm confusion, invalid signature, missing subject, missing/invalid `auth_version`, invalid timestamps, and expired token.
+- Issue/verify required `sub`, `iat`, `exp`, and `auth_version` claims using proposed HS256 and `JWT_SIGNING_KEY`; reject algorithm confusion, invalid signature, missing subject, missing/invalid `auth_version`, invalid UTC timestamps, and expired token.
 - Never log the encoded token or raw authorization header.
 
 ## API / Interface Design
@@ -128,7 +128,7 @@ All auth endpoints use the P0 envelope:
 }
 ```
 
-Errors preserve `success=false`, safe `data` when useful, typed `error.code`, safe `error.message`, and optional `meta`.
+Errors preserve `success=false`, safe `data` when useful, typed `error.code`, safe `error.message`, and optional `meta`. Framework request-validation and auth-dependency failures must be normalized into this envelope; raw FastAPI error bodies are not part of the auth contract.
 
 ### Endpoint set
 
@@ -173,6 +173,7 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 
 - Account creation commits User row and hash together.
 - Status/role changes commit as one transaction.
+- Bootstrap zero-Admin check/create and last-Admin protection must be serialized with the account mutation so concurrent starts or Admin updates cannot create duplicate first Admins or leave zero active Admins.
 - Duplicate identifiers map to a stable conflict response.
 - User list reads use the shared `UserSummary` projection, not full entity serialization.
 - Last-Admin checks occur inside the same transaction as the mutation.
@@ -253,7 +254,7 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 
 - Empty/whitespace identifier or identifier outside 3–64 / pattern rules: `422 VALIDATION_ERROR`.
 - Invalid role: `422 VALIDATION_ERROR`.
-- Password below approved minimum: `422 VALIDATION_ERROR`.
+- New account/bootstrap password below 12 characters or containing only whitespace: `422 VALIDATION_ERROR`; no forced complexity regex; passwords remain case-sensitive. Login handling of policy-invalid values remains OQ-AUTH-001.
 - Duplicate identifier: `409 ACCOUNT_CONFLICT`.
 - Last-Admin violation: `409 LAST_ADMIN_REQUIRED`.
 - Invalid login: `401 AUTHENTICATION_FAILED` with generic message.

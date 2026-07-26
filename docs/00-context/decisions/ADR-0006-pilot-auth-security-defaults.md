@@ -26,7 +26,7 @@ These choices are security posture decisions and must be recorded before impleme
 For the department intranet pilot, adopt the following defaults unless this ADR is superseded:
 
 1. **Password hashing:** Argon2id via a maintained Python password-hashing library. Persist only the encoded hash string. Treat malformed hashes as verification failure.
-2. **JWT algorithm:** HS256 with a runtime secret (`JWT_SIGNING_KEY` or equivalent). Fail closed when the key is missing outside local development. Asymmetric keys and multi-host key distribution require a future ADR.
+2. **JWT algorithm:** HS256 with the runtime environment secret `JWT_SIGNING_KEY`. Fail closed when the key is missing outside local development. Asymmetric keys and multi-host key distribution require a future ADR.
 3. **Access-token lifetime:** 30 minutes. No refresh-token endpoint and no server-side session table in this slice.
 4. **Token invalidation:** Every access token includes `auth_version`. Deactivation increments `auth_version`. Protected requests must reject tokens whose `auth_version` does not match the current User row, and must also reject inactive accounts. `auth_version` is mandatory, not optional.
 5. **Authorization source of truth:** Current PostgreSQL `role` and `status` for the internal `user_id`. A JWT `role` claim, if present, is display convenience only and must never authorize.
@@ -35,7 +35,7 @@ For the department intranet pilot, adopt the following defaults unless this ADR 
    - `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER` (required)
    - `AUTH_BOOTSTRAP_ADMIN_PASSWORD` (required)
    - `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME` (optional; default derived from identifier)
-   Bootstrap runs only when zero Admin accounts exist, creates exactly one active Admin, never commits default passwords, and is ignored once any Admin exists.
+   Bootstrap runs only when zero Admin accounts exist, creates exactly one active Admin, never commits default passwords, and is ignored once any Admin exists. The zero-Admin check and create must be serialized so concurrent starts have one winner. Missing/invalid required bootstrap values create no Admin; fail-closed startup is the recommended default pending owner/security confirmation.
 8. **Last-Admin protection:** Reject any Admin operation that would deactivate or demote the last remaining active Admin account.
 
 ## Alternatives Considered

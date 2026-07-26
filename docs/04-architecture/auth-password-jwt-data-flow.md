@@ -92,17 +92,19 @@ Next request reads committed current state
 ```text
 Application startup
         ▼
-Count active/any Admin accounts
+Serialize bootstrap transaction and count any Admin accounts
   one or more Admins exist ──► ignore bootstrap env vars
         │ zero Admins
         ▼
 Read AUTH_BOOTSTRAP_ADMIN_* env vars
-  missing/invalid ──► fail closed or remain Admin-less until configured
+  missing/invalid ──► create no Admin; safe startup failure behavior remains pending OQ-AUTH-002
         ▼
 Create exactly one active Admin with Argon2id hash
         ▼
 Later startups skip bootstrap
 ```
+
+The serialized check/create is required so concurrent application starts have one winner; all losing starts re-read the committed state and skip creation. The recommended safe default for missing or invalid required bootstrap values is fail-closed startup, pending owner/security confirmation.
 
 ## Flow 5: Frontend Session Lifecycle
 
@@ -127,7 +129,7 @@ Later startups skip bootstrap
 
 ## Failure Boundaries
 
-- Password verification failure is indistinguishable from unknown identifier.
+- Password verification failure is indistinguishable from unknown identifier for structurally valid login input; request-shape validation remains a typed `VALIDATION_ERROR`.
 - User lookup/database failure fails closed and is mapped to a safe server/dependency error.
 - Token parser errors do not echo raw token content.
 - Unknown token subject returns `TOKEN_INVALID`.

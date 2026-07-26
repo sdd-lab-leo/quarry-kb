@@ -29,7 +29,7 @@ There is no persisted Session entity in this slice. Access JWTs are short-lived 
 | `display_name` | String | No | Safe human-readable name. |
 | `role` | Enum | No | Exactly one of `Admin`, `Editor`, or `Viewer`. |
 | `status` | Enum | No | `active` or `deactivated`; default `active` for Admin-created users. |
-| `password_hash` | String | No for local accounts | Argon2id encoded hash only; never serialized to API responses. |
+| `password_hash` | String | No | Argon2id encoded hash for every account in this local-password slice; never serialized to API responses. A future SSO slice would need an explicit migration/ADR before allowing passwordless accounts. |
 | `external_subject` | String | Yes | Reserved for future SSO mapping; unique when present. |
 | `auth_version` | Integer | No | Starts at 0; incremented on deactivation; mandatory token claim check. |
 | `created_at` | Timestamp UTC | No | Creation time. |
@@ -60,7 +60,7 @@ active ────────────────► deactivated
 | `active → deactivated` | Admin status update | Set status/time, increment `auth_version`, reject login and protected requests. Rejected if this is the last active Admin. |
 | `deactivated → active` | Admin status update | Clear deactivation time; account may log in again. Existing pre-change tokens remain invalid because `auth_version` already advanced. |
 
-Role changes do not transition account status. They update the current role atomically and are observed on the next authorization check. Demoting the last active Admin to a non-Admin role is rejected.
+Role changes do not transition account status or increment `auth_version`; they update the current role atomically and are observed on the next authorization check because the database role is authoritative. Demoting the last active Admin to a non-Admin role is rejected. Deactivation is the only token-invalidating account mutation in this slice; no password-change endpoint is included.
 
 ## Configuration Data
 
@@ -68,10 +68,10 @@ Authentication configuration is runtime-only, not persisted in this slice:
 
 | Key | Purpose | Safety rule |
 |---|---|---|
-| JWT signing key | Sign/verify access tokens | Required outside local development; never committed or logged. |
+| JWT signing key | Sign/verify access tokens | Runtime environment secret `JWT_SIGNING_KEY`, required outside local development; never committed or logged. |
 | JWT algorithm | Select signer implementation | `[DEFAULT]` HS256 for pilot; must be explicit. |
 | Access token lifetime | Bound token validity | `[DEFAULT]` 30 minutes. |
-| Password policy | Validate new passwords | `[DEFAULT]` minimum 12 characters. |
+| Password policy | Validate new passwords | `[DEFAULT]` minimum 12 characters, at least one non-whitespace character, no forced complexity regex; passwords remain case-sensitive. |
 | Bootstrap Admin env vars | First Admin creation | Used only when zero Admins exist; never commit defaults. |
 
 ## API Projection Rules
@@ -99,5 +99,5 @@ Login, `/auth/me`, create, update, and list item responses all use this same `Us
 
 ## Open Questions
 
-- Confirm ADR-0006 acceptance for UUID IDs, Argon2id, HS256, bootstrap env vars, and last-Admin protection.
+- Confirm ADR-0006 acceptance for Argon2id, HS256, bootstrap env vars, and last-Admin protection. The current design proposes UUID `user_id` values, but the identifier type is not decided by ADR-0006 and must be pinned before implementation.
 - Confirm whether `external_subject` should later become Admin-visible; the phase-one default remains hidden from normal projections.

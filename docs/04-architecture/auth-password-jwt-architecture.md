@@ -33,7 +33,7 @@
 
 - FastAPI + Vue 3 + PostgreSQL/pgvector + Docker Compose remain fixed by ADR-0002.
 - `[DEFAULT]` The pilot uses a short-lived bearer JWT, current-user database lookup, and mandatory `auth_version` checks for protected requests.
-- `[DEFAULT]` The pilot uses HS256 runtime secret material unless a security review approves asymmetric keys.
+- `[DEFAULT]` The pilot uses HS256 with the runtime environment secret `JWT_SIGNING_KEY` unless a security review approves asymmetric keys.
 - `[DEFAULT]` Password hashing uses Argon2id; first Admin comes from runtime bootstrap env vars; last active Admin cannot be removed.
 - Audit persistence is a separate slice; this slice does not create audit tables.
 - Proposed defaults are recorded in ADR-0006 and require owner/security acceptance before coding.
@@ -137,7 +137,7 @@ The slice owns local account identity, password verification, JWT issuance/valid
 ### State / Status Model
 
 - `active → deactivated` — Admin action; protected requests fail immediately.
-- `deactivated → active` — Admin action; login becomes possible again, subject to the approved session invalidation policy.
+- `deactivated → active` — Admin action; login becomes possible again, while pre-deactivation tokens remain invalid because `auth_version` was advanced.
 - Role is not a lifecycle state; it is a single current value used on every authorization check.
 
 ### Persistence Responsibilities
@@ -158,6 +158,7 @@ The slice owns local account identity, password verification, JWT issuance/valid
 
 - **Interaction pattern:** REST/JSON with bearer authorization after login.
 - **Data exchanged:** Credentials only to login; safe user profile and token response; never password hash or provider credentials.
+- **Token configuration:** Proposed HS256 signing uses `JWT_SIGNING_KEY`; `iat`/`exp` are UTC claims and the response `expires_at` mirrors `exp`.
 - **Failure behavior:** `401` clears the session; `403` shows an authorization state without retrying credentials blindly.
 
 ### Future SSO
@@ -174,6 +175,8 @@ The slice owns local account identity, password verification, JWT issuance/valid
 3. The JWT adapter issues a short-lived access token.
 4. A protected request passes through token validation and current-user resolution.
 5. The authorization dependency checks the current role before the target use case.
+
+Bootstrap and last-Admin protection must perform their count/check and mutation inside a transaction boundary that serializes competing account-state changes. A losing concurrent bootstrap observes an existing Admin and performs no second create.
 
 ### Account Flow
 
