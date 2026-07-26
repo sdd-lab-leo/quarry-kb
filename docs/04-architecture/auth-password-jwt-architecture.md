@@ -32,9 +32,10 @@
 ### Constraints and Assumptions
 
 - FastAPI + Vue 3 + PostgreSQL/pgvector + Docker Compose remain fixed by ADR-0002.
-- `[DEFAULT]` The pilot uses a short-lived bearer JWT, current-user database lookup, and mandatory `auth_version` checks for protected requests.
-- `[DEFAULT]` The pilot uses HS256 with the runtime environment secret `JWT_SIGNING_KEY` unless a security review approves asymmetric keys.
-- `[DEFAULT]` Password hashing uses Argon2id; first Admin comes from runtime bootstrap env vars; last active Admin cannot be removed.
+- `[DEFAULT]` The pilot uses a short-lived bearer JWT without a `role` claim, current-user database lookup, and mandatory `auth_version` checks for protected requests.
+- `[DEFAULT]` The pilot uses HS256 with the runtime environment secret `JWT_SIGNING_KEY`. When `APP_ENV` is not `local`, missing/blank key fails closed at settings/startup; ADR-0005 readiness components are unchanged.
+- `[DEFAULT]` Password hashing uses Argon2id; password policy and identifier normalization follow ADR-0006; first Admin comes from runtime bootstrap env vars with fail-closed startup when required values are missing/invalid and zero Admins exist; last active Admin cannot be removed.
+- `[DEFAULT]` Internal `user_id` values are UUIDs.
 - Audit persistence is a separate slice; this slice does not create audit tables.
 - Proposed defaults are recorded in ADR-0006 and require owner/security acceptance before coding.
 
@@ -158,7 +159,7 @@ The slice owns local account identity, password verification, JWT issuance/valid
 
 - **Interaction pattern:** REST/JSON with bearer authorization after login.
 - **Data exchanged:** Credentials only to login; safe user profile and token response; never password hash or provider credentials.
-- **Token configuration:** Proposed HS256 signing uses `JWT_SIGNING_KEY`; `iat`/`exp` are UTC claims and the response `expires_at` mirrors `exp`.
+- **Token configuration:** Proposed HS256 signing uses `JWT_SIGNING_KEY`; `iat`/`exp` are UTC NumericDate claims; response `expires_at` mirrors `exp` as ISO-8601 UTC; pilot tokens omit `role`.
 - **Failure behavior:** `401` clears the session; `403` shows an authorization state without retrying credentials blindly.
 
 ### Future SSO
@@ -176,7 +177,7 @@ The slice owns local account identity, password verification, JWT issuance/valid
 4. A protected request passes through token validation and current-user resolution.
 5. The authorization dependency checks the current role before the target use case.
 
-Bootstrap and last-Admin protection must perform their count/check and mutation inside a transaction boundary that serializes competing account-state changes. A losing concurrent bootstrap observes an existing Admin and performs no second create.
+Bootstrap and last-Admin protection must perform their count/check and mutation inside a transaction boundary that serializes competing account-state changes. A losing concurrent bootstrap observes an existing Admin and performs no second create. When zero Admins exist and required bootstrap env vars are missing or invalid, startup fails closed and creates no Admin.
 
 ### Account Flow
 
@@ -248,5 +249,6 @@ Bootstrap and last-Admin protection must perform their count/check and mutation 
 
 ## Open Questions
 
-- Owner/security must accept or amend ADR-0006 and OQ-AUTH-001 through OQ-AUTH-005 before implementation handoff.
+- Owner/security must accept or amend proposed ADR-0006 (which now encodes OQ-AUTH-001 through OQ-AUTH-005) before implementation handoff.
 - Product owner must accept this slice before coding starts.
+- Documentation of defaults is not owner/security approval.

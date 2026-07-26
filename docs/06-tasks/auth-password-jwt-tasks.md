@@ -6,7 +6,7 @@ Implement the `auth-password-jwt` slice on top of the verified `repo-bootstrap` 
 
 **Planning assumptions:**
 
-- The slice is not approved for coding until OQ-AUTH-001 through OQ-AUTH-005 are accepted or explicitly defaulted, and proposed ADR-0006 is accepted or amended.
+- The slice is not approved for coding until proposed ADR-0006 is accepted or amended. OQ-AUTH-001 through OQ-AUTH-005 are encoded in ADR-0006; documenting those defaults is not owner/security approval.
 - No knowledge, model, upload, provider, audit, or SSO capability is added.
 - All database changes use Alembic and start from revision `20260726_0001`.
 - The health-probe exception from ADR-0005 remains intact.
@@ -65,12 +65,12 @@ The critical path is TASK-AUTH-001 → TASK-AUTH-008 → TASK-AUTH-002 → TASK-
 ### TASK-AUTH-001: Accept and Pin Authentication Defaults
 
 - **Objective:** Remove implementation ambiguity before code starts.
-- **Scope:** Confirm or amend password policy and login-validation semantics, first-Admin bootstrap env/concurrency/failure contract, JWT lifetime/algorithm/key source/claims, browser token storage, identifier normalization, Argon2id hashing baseline, internal user ID type, mandatory `auth_version`, request-error envelope, and last-Admin protection; accept or amend ADR-0006; update this SDD set if amended.
+- **Scope:** Accept or amend ADR-0006, which already encodes password policy and login-validation semantics, first-Admin bootstrap env/concurrency/fail-closed startup, JWT lifetime/algorithm/key source/claims (no `role` claim), browser token storage, identifier normalization, Argon2id hashing, UUID `user_id`, mandatory `auth_version`, `INTERNAL_ERROR` for unexpected 5xx, JWT-key settings/startup fail-closed without changing ADR-0005 readiness, and last-Admin protection; update this SDD set if amended.
 - **Dependencies:** None.
 - **Owner type:** product / security / architecture
 - **Priority:** Must
-- **Verification:** Written approval or accepted ADR-0006 references all OQ-AUTH decisions and the security defaults above.
-- **Definition of done:** No implementation-impacting auth default remains unowned or deferred.
+- **Verification:** Written approval or Accepted ADR-0006 that covers OQ-AUTH-001 through OQ-AUTH-005 and the security defaults above.
+- **Definition of done:** No implementation-impacting auth default remains unowned or deferred; ADR-0006 is Accepted or explicitly superseded.
 
 ### TASK-AUTH-008: Prepare Implementation Handoff Package
 
@@ -178,5 +178,5 @@ TASK-AUTH-001
 
 ## Open Questions
 
-- OQ-AUTH-001 through OQ-AUTH-005 in the requirements document.
+- OQ-AUTH-001 through OQ-AUTH-005 remain pending only as owner/security acceptance of proposed ADR-0006 (defaults are already documented there).
 - ADR-0006 must be accepted or amended before TASK-AUTH-008 completes.

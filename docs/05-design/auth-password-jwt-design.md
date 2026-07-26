@@ -28,17 +28,18 @@ No existing User model, auth router, password adapter, JWT signer, or business m
 
 ## Design Assumptions
 
-- `[PROPOSED — TASK-AUTH-001]` Use an internal UUID user ID; this type is not decided by ADR-0006.
-- `[DEFAULT]` Use an access JWT with `sub`, `iat`, `exp`, and mandatory `auth_version`; current role/status are loaded from PostgreSQL for authorization.
-- `[DEFAULT]` Use HS256 with runtime environment secret `JWT_SIGNING_KEY` for the single-host pilot; do not expose the secret through settings APIs.
+- `[DEFAULT]` Use an internal UUID `user_id` (ADR-0006).
+- `[DEFAULT]` Use an access JWT with `sub`, `iat`, `exp`, and mandatory `auth_version`; do not emit a `role` claim; current role/status are loaded from PostgreSQL for authorization.
+- `[DEFAULT]` Use HS256 with runtime environment secret `JWT_SIGNING_KEY`. When `APP_ENV` is not `local`, missing/blank key fails closed at settings/startup validation; auth routes are not served. Do not add a JWT component to ADR-0005 readiness.
 - `[DEFAULT]` Use 30-minute access-token lifetime and no refresh-token endpoint.
 - `[DEFAULT]` Store the browser token in memory with `sessionStorage` fallback; never `localStorage`.
 - `[DEFAULT]` Admin supplies an initial password when creating an account; password reset is out of scope.
-- `[DEFAULT]` New account/bootstrap passwords use Argon2id and the proposed 12-character/non-whitespace policy; login error handling for policy-invalid values remains OQ-AUTH-001.
-- `[DEFAULT]` First Admin is created from `AUTH_BOOTSTRAP_ADMIN_*` env vars only when zero Admins exist.
+- `[DEFAULT]` New account/bootstrap passwords use Argon2id and the 12-character/non-whitespace policy (`422` on create/bootstrap). After login request-shape validation, all credential failures use generic `401 AUTHENTICATION_FAILED`.
+- `[DEFAULT]` First Admin is created from `AUTH_BOOTSTRAP_ADMIN_*` env vars only when zero Admins exist; optional display name defaults to the normalized identifier; missing/invalid required values fail closed at startup.
 - `[DEFAULT]` Last active Admin cannot be deactivated or demoted.
+- `[DEFAULT]` Unexpected server/dependency failures use HTTP 500 / `INTERNAL_ERROR` in the P0 envelope.
 
-These defaults are recorded in proposed ADR-0006 and require owner/security confirmation before implementation handoff.
+These defaults are recorded in proposed ADR-0006 and require owner/security confirmation before implementation handoff. Documentation of defaults is not approval.
 
 ## Design Scope
 
@@ -79,8 +80,9 @@ No business content routes, audit persistence, SSO, password recovery, provider 
 ### First-Admin bootstrap
 
 - On startup, serialize the zero-Admin check and create so concurrent starts have one winner; if zero Admin accounts exist and bootstrap env vars are present, create one active Admin.
-- Validate the proposed password policy before create; fail closed on invalid bootstrap password is the recommended default pending OQ-AUTH-002 confirmation.
-- If any Admin already exists, ignore bootstrap env vars, including when the existing Admin is deactivated.
+- Validate the password and identifier policy before create. When zero Admins exist and required bootstrap values are missing or invalid, create no Admin and fail closed at startup.
+- If any Admin already exists (active or deactivated), ignore bootstrap env vars.
+- Optional `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME` defaults to the normalized identifier.
 - Never commit default bootstrap passwords.
 
 ### Account administration service
@@ -110,7 +112,7 @@ No business content routes, audit persistence, SSO, password recovery, provider 
 
 - `issue(user_id, auth_version, now, expiry) -> encoded_token`
 - `verify(encoded_token, now) -> token_claims`
-- Issue/verify required `sub`, `iat`, `exp`, and `auth_version` claims using proposed HS256 and `JWT_SIGNING_KEY`; reject algorithm confusion, invalid signature, missing subject, missing/invalid `auth_version`, invalid UTC timestamps, and expired token.
+- Issue/verify required `sub`, `iat`, `exp`, and `auth_version` claims using HS256 and `JWT_SIGNING_KEY`; do not emit a `role` claim; reject algorithm confusion, invalid signature, missing subject, missing/invalid `auth_version`, invalid UTC timestamps, and expired token.
 - Never log the encoded token or raw authorization header.
 
 ## API / Interface Design
@@ -128,7 +130,7 @@ All auth endpoints use the P0 envelope:
 }
 ```
 
-Errors preserve `success=false`, safe `data` when useful, typed `error.code`, safe `error.message`, and optional `meta`. Framework request-validation and auth-dependency failures must be normalized into this envelope; raw FastAPI error bodies are not part of the auth contract.
+Errors preserve `success=false`, safe `data` when useful, typed `error.code`, safe `error.message`, and optional `meta`. Framework request-validation and auth-dependency failures must be normalized into this envelope; raw FastAPI error bodies are not part of the auth contract. Unexpected server/dependency failures use HTTP 500 with `error.code = INTERNAL_ERROR` and a safe message.
 
 ### Endpoint set
 
@@ -164,6 +166,7 @@ Errors preserve `success=false`, safe `data` when useful, typed `error.code`, sa
 | Last-Admin demotion/deactivation | 409 | `LAST_ADMIN_REQUIRED` |
 | Invalid role/password/field/identifier | 422 | `VALIDATION_ERROR` |
 | Target user absent | 404 | `USER_NOT_FOUND` |
+| Unexpected server/dependency failure | 500 | `INTERNAL_ERROR` |
 
 ## Data Design
 
@@ -252,16 +255,17 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 
 ## Validation and Error Handling
 
-- Empty/whitespace identifier or identifier outside 3–64 / pattern rules: `422 VALIDATION_ERROR`.
+- Empty/whitespace identifier or identifier outside 3–64 / pattern rules after trim+lowercase: `422 VALIDATION_ERROR`.
+- Empty/whitespace display name or display name outside 1–128 after trim: `422 VALIDATION_ERROR`.
 - Invalid role: `422 VALIDATION_ERROR`.
-- New account/bootstrap password below 12 characters or containing only whitespace: `422 VALIDATION_ERROR`; no forced complexity regex; passwords remain case-sensitive. Login handling of policy-invalid values remains OQ-AUTH-001.
+- New account/bootstrap password below 12 characters or containing only whitespace: `422 VALIDATION_ERROR`; no forced complexity regex; passwords remain case-sensitive.
+- Login after request-shape validation: unknown identifier, wrong password, inactive account, and structurally valid passwords that fail create policy all return `401 AUTHENTICATION_FAILED` with the same safe category.
 - Duplicate identifier: `409 ACCOUNT_CONFLICT`.
 - Last-Admin violation: `409 LAST_ADMIN_REQUIRED`.
-- Invalid login: `401 AUTHENTICATION_FAILED` with generic message.
 - Invalid/unknown-subject token: `401 TOKEN_INVALID`; do not echo token.
 - Inactive/version-mismatched account: `401 ACCOUNT_INACTIVE`.
 - Insufficient role: `403 FORBIDDEN`.
-- Database failure: safe `5xx` envelope; no connection string, SQL, hash, or token in message.
+- Unexpected database/dependency failure: HTTP 500 / `INTERNAL_ERROR`; no connection string, SQL, hash, or token in message.
 
 ### Edge Cases
 
@@ -269,7 +273,7 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 2. User is deactivated between token validation and use-case authorization: current-user check occurs immediately before the use case; transaction boundaries must fail closed if the user mutation is observed.
 3. Role changes while a browser holds an old token: current role is loaded from the database, so the next request uses the new role.
 4. A malformed stored password hash: login fails generically and does not expose the hash.
-5. A missing JWT key outside local mode: application/auth readiness fails closed; no token is issued.
+5. A missing/blank `JWT_SIGNING_KEY` when `APP_ENV` is not `local`: settings/startup validation fails closed; auth routes are not served; no token is issued. ADR-0005 readiness components remain unchanged.
 6. Health probe request without a bearer token: remains allowed under ADR-0005 and is not treated as business-route bypass.
 7. Reactivation after deactivation: old tokens remain invalid because `auth_version` advanced.
 8. Attempt to demote/deactivate the sole active Admin: rejected with `LAST_ADMIN_REQUIRED`.
@@ -292,4 +296,4 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 
 ## Open Questions
 
-- Resolve OQ-AUTH-001 through OQ-AUTH-005 by accepting or amending ADR-0006 before implementation.
+- Owner/security must accept or amend proposed ADR-0006 before implementation. OQ-AUTH-001 through OQ-AUTH-005 are encoded in that ADR; documenting defaults is not approval.

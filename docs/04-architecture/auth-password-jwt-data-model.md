@@ -24,9 +24,9 @@ There is no persisted Session entity in this slice. Access JWTs are short-lived 
 
 | Field | Logical type | Nullable | Constraints / purpose |
 |---|---|---:|---|
-| `user_id` | UUID | No | Primary key; internal ownership identifier. `[DEFAULT]` |
-| `identifier` | String | No | Normalized, unique login identifier; length 3–64; pattern `[a-z0-9._@-]+`. |
-| `display_name` | String | No | Safe human-readable name. |
+| `user_id` | UUID | No | Primary key; internal ownership identifier. `[DEFAULT]` for this slice (ADR-0006). |
+| `identifier` | String | No | Trimmed + lowercased unique login identifier; length 3–64 after normalization; pattern `[a-z0-9._@-]+`. |
+| `display_name` | String | No | Safe human-readable name; trimmed; length 1–128 after trim; stored separately from identifier. |
 | `role` | Enum | No | Exactly one of `Admin`, `Editor`, or `Viewer`. |
 | `status` | Enum | No | `active` or `deactivated`; default `active` for Admin-created users. |
 | `password_hash` | String | No | Argon2id encoded hash for every account in this local-password slice; never serialized to API responses. A future SSO slice would need an explicit migration/ADR before allowing passwordless accounts. |
@@ -68,11 +68,11 @@ Authentication configuration is runtime-only, not persisted in this slice:
 
 | Key | Purpose | Safety rule |
 |---|---|---|
-| JWT signing key | Sign/verify access tokens | Runtime environment secret `JWT_SIGNING_KEY`, required outside local development; never committed or logged. |
+| JWT signing key | Sign/verify access tokens | Runtime environment secret `JWT_SIGNING_KEY`. Required when `APP_ENV` is not `local`; missing/blank fails closed at settings/startup; never committed or logged; not an ADR-0005 readiness component. |
 | JWT algorithm | Select signer implementation | `[DEFAULT]` HS256 for pilot; must be explicit. |
-| Access token lifetime | Bound token validity | `[DEFAULT]` 30 minutes. |
-| Password policy | Validate new passwords | `[DEFAULT]` minimum 12 characters, at least one non-whitespace character, no forced complexity regex; passwords remain case-sensitive. |
-| Bootstrap Admin env vars | First Admin creation | Used only when zero Admins exist; never commit defaults. |
+| Access token lifetime | Bound token validity | `[DEFAULT]` 30 minutes; no `role` claim in pilot tokens. |
+| Password policy | Validate new passwords | `[DEFAULT]` minimum 12 characters, at least one non-whitespace character, no forced complexity regex; passwords remain case-sensitive; create/bootstrap → `422`; login → generic `401` after shape validation. |
+| Bootstrap Admin env vars | First Admin creation | Used only when zero Admins exist; optional display name defaults to normalized identifier; missing/invalid required values fail closed at startup; never commit defaults. |
 
 ## API Projection Rules
 
@@ -99,5 +99,5 @@ Login, `/auth/me`, create, update, and list item responses all use this same `Us
 
 ## Open Questions
 
-- Confirm ADR-0006 acceptance for Argon2id, HS256, bootstrap env vars, and last-Admin protection. The current design proposes UUID `user_id` values, but the identifier type is not decided by ADR-0006 and must be pinned before implementation.
+- Owner/security acceptance of proposed ADR-0006 remains required. ADR-0006 now encodes Argon2id, HS256, UUID `user_id`, password policy, identifier normalization, bootstrap fail-closed, JWT-key startup fail-closed, and last-Admin protection.
 - Confirm whether `external_subject` should later become Admin-visible; the phase-one default remains hidden from normal projections.
