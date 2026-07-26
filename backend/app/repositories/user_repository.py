@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -29,20 +29,25 @@ class UserRepository:
         return list(self._session.scalars(stmt).all())
 
     def count_admins(self, *, for_update: bool = False) -> int:
-        stmt = select(func.count()).select_from(User).where(User.role == UserRole.ADMIN.value)
         if for_update:
-            stmt = stmt.with_for_update()
+            self._lock_users_table()
+        stmt = select(func.count()).select_from(User).where(User.role == UserRole.ADMIN.value)
         return int(self._session.scalar(stmt) or 0)
 
     def count_active_admins(self, *, for_update: bool = False) -> int:
+        if for_update:
+            self._lock_users_table()
         stmt = (
             select(func.count())
             .select_from(User)
             .where(User.role == UserRole.ADMIN.value, User.status == UserStatus.ACTIVE.value)
         )
-        if for_update:
-            stmt = stmt.with_for_update()
         return int(self._session.scalar(stmt) or 0)
+
+    def _lock_users_table(self) -> None:
+        """Serialize auth mutations, including the zero-row bootstrap case."""
+        if self._session.get_bind().dialect.name == "postgresql":
+            self._session.execute(text("LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE"))
 
     def create(
         self,
