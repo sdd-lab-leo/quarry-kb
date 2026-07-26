@@ -38,7 +38,7 @@ flowchart LR
 
 | Stage | Current status | Evidence / gap |
 |---|---|---|
-| P0 Product baseline | `In progress` | Product specification v0.1.5, positioning, prototype, fixed evaluation question set, gateway boundary ADR, and a draft `repo-bootstrap` SDD chain exist. Document-quality review is `Ready with minor fixes`; product/slice acceptance is still pending. |
+| P0 Product baseline | `In progress` | Product specification v0.1.5, positioning, prototype, fixed evaluation question set, gateway ADRs (0004/0005), and a remediated `repo-bootstrap` SDD chain exist. Independent review findings for readiness contract, allowlist, SEC-01 exception, and traceability were fixed; document quality is `Ready with minor fixes` pending product-owner acceptance. |
 | P1 Engineering foundation | `Not started` | Application scaffolding is not present. |
 | P2 Identity and authorization | `Not started` | No backend or frontend implementation. |
 | P3 Knowledge ingestion | `Not started` | No parser, OCR, embedding, or worker implementation. |
@@ -75,11 +75,15 @@ Do not count code that merely exists. A stage can be reported as `Functional` be
 
 ## Recommended Slice Order
 
-1. `foundation-auth`
-2. `knowledge-ingest`
-3. `knowledge-browse-admin`
-4. `retrieval-rag`
-5. `pilot-hardening`
+Aligned with product specification §13:
+
+1. `repo-bootstrap`
+2. `auth-password-jwt`
+3. `knowledge-ingest`
+4. `ask-rag`
+5. `chat-providers` (may merge into auth or ask)
+6. `audit-minimal`
+7. `pilot-hardening` (cross-cutting reliability/security and pilot packaging after the capability slices)
 
 Each slice should update its corresponding requirements, stories, specification, architecture/data flow/data model, design/API guide, tasks, and traceability documents before implementation.
 

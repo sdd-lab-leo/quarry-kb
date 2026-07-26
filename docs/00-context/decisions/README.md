@@ -18,3 +18,4 @@ This directory stores durable Architecture Decision Records (ADRs) for decisions
 | [ADR-0002](ADR-0002-lock-technology-stack-and-auth-evolution.md) | Accepted | Lock technology stack and auth evolution (password → SSO) |
 | [ADR-0003](ADR-0003-adopt-execution-manifest-handoff.md) | Accepted | Adopt execution-manifest based hand-off for multi-agent and multi-session work |
 | [ADR-0004](ADR-0004-gateway-contract-and-data-egress-boundaries.md) | Accepted | Lock internal gateway and data-egress boundaries |
+| [ADR-0005](ADR-0005-bootstrap-probe-allowlist-and-readiness-contract.md) | Accepted | Clarify bootstrap probe SEC-01 exception, allowlist matching, and readiness HTTP contract |

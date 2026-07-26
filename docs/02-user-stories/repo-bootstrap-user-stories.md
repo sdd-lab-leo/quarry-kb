@@ -18,7 +18,7 @@ so that I can verify the product foundation before feature work begins.
 
 ### Acceptance Criteria
 
-1. **Given** the documented prerequisites are installed, **when** the developer runs the Compose startup command, **then** `web`, `api`, and `postgres` start and report their health state.
+1. **Given** the documented prerequisites are installed, **when** the developer runs `docker compose -f deploy/docker-compose.yml up --build`, **then** `web`, `api`, and `postgres` start and report their health state.
 2. **Given** no real secret file is committed, **when** the services start with placeholder or local configuration, **then** startup does not require a source-controlled credential.
 3. **Given** one service fails to start, **when** the developer inspects the documented verification output, **then** the failed dependency is identifiable without exposing secrets.
 
@@ -51,8 +51,8 @@ so that process failure is not confused with database or migration failure.
 ### Acceptance Criteria
 
 1. **Given** the API process is alive and the database is unavailable, **when** liveness is checked, **then** liveness succeeds without claiming database readiness.
-2. **Given** the database and baseline migration are ready, **when** readiness is checked, **then** readiness reports those dependencies as ready.
-3. **Given** the gateway has not been called, **when** readiness is checked, **then** the result does not claim that chat, embedding, or OCR is healthy.
+2. **Given** the database, baseline migration, and vector capability are ready, **when** readiness is checked, **then** readiness returns HTTP 200 with ready component states for configuration, database, migration, and vector capability.
+3. **Given** the gateway has not been called, **when** readiness is checked, **then** the result does not include gateway health and does not claim that chat, embedding, or OCR is healthy.
 
 ## Notes / Assumptions
 
@@ -80,9 +80,9 @@ so that later slices can add application data without hand-editing the database.
 
 ### Acceptance Criteria
 
-1. **Given** a fresh database, **when** the baseline migration runs, **then** the database reaches the documented foundation state.
+1. **Given** a fresh database, **when** the baseline migration runs, **then** the PostgreSQL `vector` extension is enabled and Alembic records the foundation revision, with no business tables created.
 2. **Given** the baseline migration has already run, **when** it runs again, **then** it does not duplicate application state or fail because of an already-applied revision.
-3. **Given** the required vector capability is unavailable, **when** readiness or migration validation runs, **then** the failure identifies the missing capability and does not report the database as ready.
+3. **Given** the required vector capability is unavailable, **when** readiness or migration validation runs, **then** the failure identifies `vector_capability` as not ready and does not report overall readiness as ready.
 
 ## Notes / Assumptions
 
@@ -110,7 +110,7 @@ so that later user-facing slices can add routes without scattering HTTP behavior
 ### Acceptance Criteria
 
 1. **Given** the web service is running, **when** a developer opens it, **then** the frontend shell renders without requiring a business login implementation.
-2. **Given** the shell checks API health, **when** the API reports success or failure, **then** the shell displays the corresponding typed state.
+2. **Given** the shell checks API readiness, **when** the API returns HTTP 200 ready, HTTP 503 not-ready, or is unreachable, **then** the shell displays `Ready`, `Needs attention`, or `Unable to reach API` respectively.
 3. **Given** an API request fails, **when** the shell handles the error, **then** it uses the shared safe error path and does not log tokens or passwords.
 
 ## Notes / Assumptions
@@ -140,8 +140,8 @@ so that later model integrations cannot accidentally send embedding or OCR data 
 
 ### Acceptance Criteria
 
-1. **Given** the environment template is copied for local use, **when** a maintainer inspects it, **then** it contains placeholders for chat, embedding, and OCR settings but no real secret.
-2. **Given** an embedding or OCR base URL is public, **when** configuration validation runs, **then** it rejects the configuration before an outbound request.
+1. **Given** the environment template is copied for local use, **when** a maintainer inspects it, **then** it contains placeholders for chat, embedding, OCR, and the default allowlist (including the placeholder gateway host) but no real secret.
+2. **Given** an embedding or OCR base URL host is public or otherwise absent from the allowlist, **when** configuration validation runs, **then** it rejects the configuration by literal host match before an outbound request and without DNS resolution.
 3. **Given** a public chat provider is configured for later use, **when** the configuration is documented, **then** it is distinguished from the stricter internal-only embedding/OCR boundary.
 
 ## Notes / Assumptions
@@ -151,7 +151,7 @@ so that later model integrations cannot accidentally send embedding or OCR data 
 ## Dependencies
 
 - `REQ-BOOT-005` to `REQ-BOOT-008`
-- ADR-0004
+- ADR-0004, ADR-0005
 
 ## Out of Scope
 

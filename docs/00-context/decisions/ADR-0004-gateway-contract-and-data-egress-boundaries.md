@@ -56,5 +56,5 @@ The product specification already settles decisions D-01 through D-07. This ADR 
 - [Product specification](../../01-requirements/quarry-kb-product-spec-v0.1.md)
 - [Product positioning](../product-positioning.md)
 - [ADR-0002](ADR-0002-lock-technology-stack-and-auth-evolution.md)
+- [ADR-0005](ADR-0005-bootstrap-probe-allowlist-and-readiness-contract.md) (clarifies allowlist matching, SEC-01 probe exception, and readiness HTTP semantics)
 - [repo-bootstrap architecture](../../04-architecture/repo-bootstrap-architecture.md)
-

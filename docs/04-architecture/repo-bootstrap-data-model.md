@@ -11,6 +11,14 @@ The `repo-bootstrap` slice establishes the database and migration boundary but i
 │ Migration Metadata            │
 │ tool-owned revision state     │
 └──────────────────────────────┘
+                │
+                │ enables / verifies
+                ▼
+┌──────────────────────────────┐
+│ PostgreSQL vector extension   │
+│ capability required for later │
+│ embedding storage             │
+└──────────────────────────────┘
 
 No application business entities or relationships are owned by repo-bootstrap.
 ```
@@ -19,7 +27,7 @@ No application business entities or relationships are owned by repo-bootstrap.
 
 ### Migration Metadata
 
-- **Logical table:** Tool-owned migration metadata.
+- **Logical table:** Tool-owned migration metadata (Alembic).
 - **Purpose:** Records the applied migration revision so startup and readiness can distinguish a fresh, current, or incomplete database.
 - **Logical attributes:**
   - `revision_identifier`: non-empty migration revision value.
@@ -27,7 +35,15 @@ No application business entities or relationships are owned by repo-bootstrap.
 - **Ownership:** Migration tooling, not application business logic.
 - **Application contract:** The API may read migration readiness but must not edit migration metadata directly.
 
-The physical table name and vendor-specific columns are intentionally left to the selected migration tool and its approved version. No business entity is inferred from this operational state.
+### Vector Capability
+
+- **Logical object:** PostgreSQL `vector` extension.
+- **Purpose:** Confirms the database can later store embeddings.
+- **Bootstrap baseline duty:** The Alembic baseline migration enables the `vector` extension when absent and is otherwise idempotent.
+- **Readiness check:** Query extension availability (for example `pg_extension` where `extname = 'vector'`). If unavailable, readiness reports `vector_capability = not_ready`.
+- **Non-duty:** No embedding tables, chunk tables, or business schemas are created in this slice.
+
+The physical Alembic version-table name and vendor-specific columns are owned by Alembic. No business entity is inferred from this operational state.
 
 ## State Models
 
@@ -45,8 +61,24 @@ MISSING ── baseline migration ──► CURRENT
 | State | Meaning | Allowed transition |
 |---|---|---|
 | `MISSING` | Fresh database has no foundation revision | `CURRENT` after baseline migration; `BLOCKED` on failure. |
-| `CURRENT` | Required foundation revision is applied | `BLOCKED` if capability/readiness validation fails. |
+| `CURRENT` | Required foundation revision is applied and `vector` is enabled | `BLOCKED` if capability/readiness validation fails. |
 | `BLOCKED` | Migration or required capability is unavailable | `CURRENT` after corrective migration/configuration. |
+
+### Readiness HTTP Mapping
+
+| Overall status | HTTP | Component fields |
+|---|---|---|
+| `ready` | 200 | `configuration`, `database`, `migration`, `vector_capability` all `ready` |
+| `not_ready` | 503 | Same four fields; at least one is `not_ready`; one stable top-level error code |
+
+### Frontend Display Mapping
+
+| API result | Frontend state | UI label |
+|---|---|---|
+| HTTP 200 ready | `ready` | Ready |
+| HTTP 503 not-ready | `needs_attention` | Needs attention |
+| Transport / unexpected failure | `unreachable` | Unable to reach API |
+| Request in flight | `loading` | Loading |
 
 ## Configuration Entities
 
@@ -58,8 +90,9 @@ Configuration is environment-owned rather than persisted as application data in 
 | Database | Connection URL, migration target | Must resolve to the configured local database. |
 | Storage | Upload root placeholder | Must be outside the Git corpus boundary. |
 | Chat | Internal base URL/model and secret placeholder | Provider-neutral; public chat setup is later Admin scope. |
-| Embedding | Base URL, model, dimension, secret placeholder | Internal/gateway allowlist only. |
-| OCR | Base URL, model/path, timeout, secret placeholder | Internal/gateway allowlist only. |
+| Embedding | Base URL, model, dimension, secret placeholder | Host must literally match allowlist; empty invalid. |
+| OCR | Base URL, model/path, timeout, secret placeholder | Host must literally match allowlist; empty invalid. |
+| Allowlist | Comma-separated hosts; default includes `gateway.internal` | Used only for embedding/OCR host policy; no DNS validation. |
 
 ## Audit Entities
 
@@ -70,6 +103,7 @@ None. Business audit records belong to `audit-minimal` and the slices that emit 
 | Source | Destination | Transformation |
 |---|---|---|
 | Environment variable | Validated runtime setting | Parse, validate, and redact on diagnostics. |
+| Embedding/OCR URL host | Allowlist decision | Literal hostname or `host:port` match; no DNS lookup. |
 | Database migration output | Migration readiness | Normalize into `current`, `missing`, or `blocked`. |
-| API readiness result | Frontend typed state | Normalize into `ready`, `degraded`, or `error`. |
-
+| `pg_extension` / equivalent | Vector capability readiness | Normalize into `ready` or `not_ready`. |
+| API readiness HTTP result | Frontend typed state | `200` → `ready`; `503` → `needs_attention`; transport failure → `unreachable`. |
