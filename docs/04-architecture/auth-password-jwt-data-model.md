@@ -1,5 +1,9 @@
 # Data Model: Password Authentication and JWT Authorization
 
+## Status
+
+Approved — Implementation Ready
+
 ## Overview
 
 This slice adds the durable local identity record required by authentication and future ownership checks. It intentionally does not add knowledge, session-history, provider, or audit entities.
@@ -99,5 +103,4 @@ Login, `/auth/me`, create, update, and list item responses all use this same `Us
 
 ## Open Questions
 
-- Owner/security acceptance of proposed ADR-0006 remains required. ADR-0006 now encodes Argon2id, HS256, UUID `user_id`, password policy, identifier normalization, bootstrap fail-closed, JWT-key startup fail-closed, and last-Admin protection.
-- Confirm whether `external_subject` should later become Admin-visible; the phase-one default remains hidden from normal projections.
+- Whether `external_subject` should later become Admin-visible remains deferred; phase-one default stays hidden from normal projections.

@@ -83,7 +83,10 @@ class Settings(BaseSettings):
     ocr_api_key: str = "replace-me"
 
     alembic_config_path: str = "alembic.ini"
-    expected_alembic_revision: str = "20260726_0001"
+    expected_alembic_revision: str = "20260726_0002"
+
+    jwt_signing_key: str = ""
+    auth_bootstrap_on_startup: bool = True
 
     @field_validator("database_url")
     @classmethod

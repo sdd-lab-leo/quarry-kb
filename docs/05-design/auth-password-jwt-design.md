@@ -1,5 +1,9 @@
 # Detailed Design: Password Authentication and JWT Authorization
 
+## Status
+
+Approved — Implementation Ready
+
 ## Overview
 
 This design turns the `auth-password-jwt` behavior into implementation-facing module, data, API, UI, and verification boundaries. It extends the verified P0 foundation; it does not implement code in this document-remediation session.
@@ -10,7 +14,7 @@ This design turns the `auth-password-jwt` behavior into implementation-facing mo
 - `docs/04-architecture/auth-password-jwt-data-flow.md`
 - `docs/04-architecture/auth-password-jwt-data-model.md`
 - `docs/03-spec/auth-password-jwt-spec.md`
-- ADR-0002, ADR-0005, and proposed ADR-0006
+- ADR-0002, ADR-0005, and Accepted ADR-0006
 
 ## Grounding Evidence From P0
 
@@ -37,9 +41,9 @@ No existing User model, auth router, password adapter, JWT signer, or business m
 - `[DEFAULT]` New account/bootstrap passwords use Argon2id and the 12-character/non-whitespace policy (`422` on create/bootstrap). After login request-shape validation, all credential failures use generic `401 AUTHENTICATION_FAILED`.
 - `[DEFAULT]` First Admin is created from `AUTH_BOOTSTRAP_ADMIN_*` env vars only when zero Admins exist; optional display name defaults to the normalized identifier; missing/invalid required values fail closed at startup.
 - `[DEFAULT]` Last active Admin cannot be deactivated or demoted.
-- `[DEFAULT]` Unexpected server/dependency failures use HTTP 500 / `INTERNAL_ERROR` in the P0 envelope.
+- `[DEFAULT]` Unexpected server/dependency failures use HTTP 500 / `AUTH_INTERNAL_ERROR` in the P0 envelope.
 
-These defaults are recorded in proposed ADR-0006 and require owner/security confirmation before implementation handoff. Documentation of defaults is not approval.
+These defaults are recorded in Accepted ADR-0006 (2026-07-26), including Confirmed OQ-AUTH-001 through OQ-AUTH-005, UUID `user_id`, and `AUTH_INTERNAL_ERROR`.
 
 ## Design Scope
 
@@ -130,7 +134,7 @@ All auth endpoints use the P0 envelope:
 }
 ```
 
-Errors preserve `success=false`, safe `data` when useful, typed `error.code`, safe `error.message`, and optional `meta`. Framework request-validation and auth-dependency failures must be normalized into this envelope; raw FastAPI error bodies are not part of the auth contract. Unexpected server/dependency failures use HTTP 500 with `error.code = INTERNAL_ERROR` and a safe message.
+Errors preserve `success=false`, safe `data` when useful, typed `error.code`, safe `error.message`, and optional `meta`. Framework request-validation and auth-dependency failures must be normalized into this envelope; raw FastAPI error bodies are not part of the auth contract. Unexpected server/dependency failures use HTTP 500 with `error.code = AUTH_INTERNAL_ERROR` and a safe message.
 
 ### Endpoint set
 
@@ -166,7 +170,7 @@ Errors preserve `success=false`, safe `data` when useful, typed `error.code`, sa
 | Last-Admin demotion/deactivation | 409 | `LAST_ADMIN_REQUIRED` |
 | Invalid role/password/field/identifier | 422 | `VALIDATION_ERROR` |
 | Target user absent | 404 | `USER_NOT_FOUND` |
-| Unexpected server/dependency failure | 500 | `INTERNAL_ERROR` |
+| Unexpected server/dependency failure | 500 | `AUTH_INTERNAL_ERROR` |
 
 ## Data Design
 
@@ -265,7 +269,7 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 - Invalid/unknown-subject token: `401 TOKEN_INVALID`; do not echo token.
 - Inactive/version-mismatched account: `401 ACCOUNT_INACTIVE`.
 - Insufficient role: `403 FORBIDDEN`.
-- Unexpected database/dependency failure: HTTP 500 / `INTERNAL_ERROR`; no connection string, SQL, hash, or token in message.
+- Unexpected database/dependency failure: HTTP 500 / `AUTH_INTERNAL_ERROR`; no connection string, SQL, hash, or token in message.
 
 ### Edge Cases
 
@@ -296,4 +300,4 @@ Use the logical User model in `auth-password-jwt-data-model.md`. The implementat
 
 ## Open Questions
 
-- Owner/security must accept or amend proposed ADR-0006 before implementation. OQ-AUTH-001 through OQ-AUTH-005 are encoded in that ADR; documenting defaults is not approval.
+None remaining for implementation.

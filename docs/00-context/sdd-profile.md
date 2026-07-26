@@ -69,4 +69,4 @@ Existing shared docs such as `docs/03-spec/spec.md`, `docs/04-architecture/archi
 - [ADR-0001](decisions/ADR-0001-adopt-context-engineering-adr-and-sdd-skills.md)
 - [ADR-0002](decisions/ADR-0002-lock-technology-stack-and-auth-evolution.md)
 - [ADR-0003](decisions/ADR-0003-adopt-execution-manifest-handoff.md)
-- [ADR-0006](decisions/ADR-0006-pilot-auth-security-defaults.md) (Proposed; pilot password/JWT security defaults)
+- [ADR-0006](decisions/ADR-0006-pilot-auth-security-defaults.md) (Accepted; pilot password/JWT security defaults)

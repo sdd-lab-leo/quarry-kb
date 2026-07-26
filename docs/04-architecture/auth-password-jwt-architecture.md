@@ -1,5 +1,9 @@
 # System Architecture: Password Authentication and JWT Authorization
 
+## Status
+
+Approved — Implementation Ready
+
 ## Overview
 
 - **Architecture Summary:** A modular FastAPI authentication boundary backed by PostgreSQL user records, a pluggable password provider, and a runtime-configured JWT signer. Vue consumes typed authentication APIs and provides usability guards, while the API remains the authorization boundary.
@@ -37,7 +41,7 @@
 - `[DEFAULT]` Password hashing uses Argon2id; password policy and identifier normalization follow ADR-0006; first Admin comes from runtime bootstrap env vars with fail-closed startup when required values are missing/invalid and zero Admins exist; last active Admin cannot be removed.
 - `[DEFAULT]` Internal `user_id` values are UUIDs.
 - Audit persistence is a separate slice; this slice does not create audit tables.
-- Proposed defaults are recorded in ADR-0006 and require owner/security acceptance before coding.
+- Defaults are recorded in Accepted ADR-0006 (2026-07-26).
 
 ## System Context
 
@@ -244,11 +248,9 @@ Bootstrap and last-Admin protection must perform their count/check and mutation 
 
 - ADR-0002 — technology stack, phase-one password/JWT auth, roles, and future SSO reservation.
 - ADR-0005 — health-probe exception and readiness boundary.
-- ADR-0006 — proposed pilot auth security defaults (`auth_version`, Argon2id, HS256, bootstrap env vars, browser storage, last-Admin protection).
+- ADR-0006 — Accepted pilot auth security defaults (`auth_version`, Argon2id, HS256, bootstrap env vars, browser storage, last-Admin protection).
 - `repo-bootstrap` SDD chain — existing envelope, migration, and frontend baseline.
 
 ## Open Questions
 
-- Owner/security must accept or amend proposed ADR-0006 (which now encodes OQ-AUTH-001 through OQ-AUTH-005) before implementation handoff.
-- Product owner must accept this slice before coding starts.
-- Documentation of defaults is not owner/security approval.
+None remaining for this slice. Product owner accepted the slice and ADR-0006 on 2026-07-26.

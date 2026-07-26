@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Slice | `auth-password-jwt` |
-| Status | Draft; requires owner/security acceptance of ADR-0006 / OQ-AUTH defaults |
+| Status | Approved — Implementation Ready; ADR-0006 Accepted; OQ-AUTH-001–005 Confirmed |
 | Base path | `/api/v1` |
 | Backend | FastAPI + PostgreSQL + Alembic |
 | Auth model | Public login plus bearer JWT for active-user/business routes |
@@ -44,7 +44,7 @@ The server must not echo or log the header value.
 
 Pilot tokens must **not** include a `role` claim. Current role is always loaded from PostgreSQL.
 
-Proposed defaults (ADR-0006): 30-minute expiry, HS256 with runtime environment secret `JWT_SIGNING_KEY`, UTC `iat`/`exp`, response `expires_at` mirrors `exp` as ISO-8601 UTC, and no refresh token. When `APP_ENV` is not `local`, missing/blank `JWT_SIGNING_KEY` fails closed at settings/startup; this does not change ADR-0005 readiness components. Pending owner/security acceptance.
+Proposed defaults (ADR-0006): 30-minute expiry, HS256 with runtime environment secret `JWT_SIGNING_KEY`, UTC `iat`/`exp`, response `expires_at` mirrors `exp` as ISO-8601 UTC, and no refresh token. When `APP_ENV` is not `local`, missing/blank `JWT_SIGNING_KEY` fails closed at settings/startup; this does not change ADR-0005 readiness components. Accepted with ADR-0006 on 2026-07-26.
 
 ## Shared `UserSummary`
 
@@ -64,7 +64,7 @@ All user projections use the same allowlisted shape:
 
 Never include `password_hash`, `external_subject`, `auth_version`, JWT values, or secret settings.
 
-The `<uuid>` values in examples reflect the ADR-0006 default internal-ID shape for this slice; owner/security acceptance of ADR-0006 is still required before coding.
+The `<uuid>` values in examples are the confirmed internal-ID shape for this slice.
 
 ## Error Response Format
 
@@ -90,9 +90,9 @@ The `<uuid>` values in examples reflect the ADR-0006 default internal-ID shape f
 | `LAST_ADMIN_REQUIRED` | 409 | Operation would deactivate or demote the last active Admin. |
 | `VALIDATION_ERROR` | 422 | Request field validation failed. |
 | `USER_NOT_FOUND` | 404 | Admin target does not exist. |
-| `INTERNAL_ERROR` | 500 | Unexpected server/dependency failure; safe message only. |
+| `AUTH_INTERNAL_ERROR` | 500 | Unexpected server/dependency failure; safe message only. |
 
-FastAPI request-validation failures and authentication-dependency failures must be normalized into this same P0 envelope. Unexpected server/dependency failures use HTTP 500 with `INTERNAL_ERROR` and a safe operator-facing message; they must not expose raw exception details.
+FastAPI request-validation failures and authentication-dependency failures must be normalized into this same P0 envelope. Unexpected server/dependency failures use HTTP 500 with `AUTH_INTERNAL_ERROR` and a safe operator-facing message; they must not expose raw exception details.
 
 ## API Endpoints Summary
 
@@ -268,4 +268,4 @@ The zero-Admin check and create must be serialized transactionally. Concurrent s
 - Runtime `JWT_SIGNING_KEY` and HS256 algorithm settings.
 - Argon2id password hashing adapter.
 - P0 envelope and redaction behavior.
-- Proposed ADR-0006 pilot auth security defaults.
+- Accepted ADR-0006 pilot auth security defaults.

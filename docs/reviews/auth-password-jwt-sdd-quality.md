@@ -2,17 +2,17 @@
 
 ## 1. Scope
 
-This report covers an independent docs-only quality audit of `auth-password-jwt`, followed by a documentation remediation that addresses Major findings. It does **not** implement authentication code, migrations, dependencies, or an execution manifest, and it does **not** mark ADR-0006 or the slice as Accepted/Approved.
+This report began as an independent docs-only quality audit of `auth-password-jwt`, followed by documentation remediation of Major findings. A later product-owner acceptance (2026-07-26) is recorded in §16 and must not be confused with the earlier audit verdict.
 
-Excluded: `audit-minimal`, auth implementation, Compose runtime, commit of secrets, and fabricated owner/security approval.
+Excluded from the original audit: `audit-minimal`, fabricated owner/security approval. Implementation proceed under the separate change package after §16 acceptance.
 
 ## 2. Overall Verdict
 
-- **Verdict after remediation:** PASS WITH FIXES (documentation gaps closed; approval still pending)
+- **Verdict after remediation:** PASS WITH FIXES (documentation gaps closed)
 - **Documentation quality:** Good
-- **Implementation readiness:** Pending Decisions
+- **Implementation readiness after §16 acceptance:** Ready for apply (manifest + freshness-gate recorded)
 
-Major documentation inconsistencies from the independent audit were remediated: ADR-0006 now encodes OQ-AUTH-001 through OQ-AUTH-005, bootstrap/JWT-key fail-closed semantics are explicit, `INTERNAL_ERROR` and UUID `user_id` are pinned, and pilot tokens omit `role`. The slice remains Draft and ADR-0006 remains **Proposed** until owner/security acceptance.
+Major documentation inconsistencies from the independent audit were remediated: ADR-0006 encodes OQ-AUTH-001 through OQ-AUTH-005, bootstrap/JWT-key fail-closed semantics, `AUTH_INTERNAL_ERROR`, UUID `user_id`, and no JWT `role` claim. Product-owner acceptance on 2026-07-26 is recorded in §16.
 
 ## 3. Document Inventory
 
@@ -20,12 +20,12 @@ Major documentation inconsistencies from the independent audit were remediated: 
 |---|---|---:|---:|---|
 | `docs/01-requirements/auth-password-jwt-requirement.md` | Draft | Yes | Yes | OQs documented as ADR-encoded defaults; still need owner acceptance |
 | `docs/02-user-stories/auth-password-jwt-user-stories.md` | Draft | Yes | Yes | Added fail-closed bootstrap acceptance criterion |
-| `docs/03-spec/auth-password-jwt-spec.md` | Draft | Yes | Yes | `INTERNAL_ERROR`, login generic failure, JWT/bootstrap fail modes aligned |
+| `docs/03-spec/auth-password-jwt-spec.md` | Draft | Yes | Yes | `AUTH_INTERNAL_ERROR`, login generic failure, JWT/bootstrap fail modes aligned |
 | `docs/04-architecture/auth-password-jwt-architecture.md` | Draft | Yes | Yes | Defaults aligned; readiness boundary preserved |
 | `docs/04-architecture/auth-password-jwt-data-flow.md` | Draft | Yes | Yes | Bootstrap fail-closed pinned; no JWT `role` claim |
 | `docs/04-architecture/auth-password-jwt-data-model.md` | Draft | Yes | Yes | UUID + display_name constraints + policy pinned |
 | `docs/05-design/auth-password-jwt-design.md` | Draft | Yes | Yes | Module/error/bootstrap/JWT assumptions aligned |
-| `docs/05-design/contracts/auth-password-jwt-API_IMPLEMENTATION_GUIDE.md` | Draft | Yes | Yes | Claims, bootstrap, `INTERNAL_ERROR` aligned |
+| `docs/05-design/contracts/auth-password-jwt-API_IMPLEMENTATION_GUIDE.md` | Draft | Yes | Yes | Claims, bootstrap, `AUTH_INTERNAL_ERROR` aligned |
 | `docs/06-tasks/auth-password-jwt-tasks.md` | Draft | Yes | Yes | TASK-AUTH-001 owns ADR acceptance |
 | `docs/00-context/auth-password-jwt-traceability.md` | Draft | Yes | Yes | ADR coverage and handoff gate updated |
 | `docs/00-context/decisions/ADR-0006-pilot-auth-security-defaults.md` | **Proposed** | Yes | Yes | Extended; status intentionally not advanced to Accepted |
@@ -48,7 +48,7 @@ No critical code-grounding falsehood remains: auth is planned behavior only.
 | M-01 | ADR-0006 did not encode OQ-AUTH-001 / OQ-AUTH-005; requirements overclaimed coverage | **Fixed** — ADR extended; requirements/traceability wording corrected |
 | M-02 | Bootstrap missing/invalid-env failure was only “recommended” | **Fixed** — fail-closed at startup when zero Admins |
 | M-03 | Login password-policy boundary ambiguous | **Fixed** — create/bootstrap `422`; login generic `401` after shape validation |
-| M-04 | Unexpected 5xx code unpinned | **Fixed** — `INTERNAL_ERROR` / HTTP 500 |
+| M-04 | Unexpected 5xx code unpinned | **Fixed** — `AUTH_INTERNAL_ERROR` / HTTP 500 |
 | M-05 | UUID `user_id` only loosely proposed | **Fixed** — encoded in ADR-0006 and data model |
 | M-06 | JWT-key “auth readiness” vs ADR-0005 ambiguous | **Fixed** — settings/startup fail-closed when `APP_ENV != local`; readiness components unchanged |
 
@@ -74,7 +74,7 @@ No critical code-grounding falsehood remains: auth is planned behavior only.
 | OQ-AUTH-004 | Documented in Proposed ADR-0006 | Memory + `sessionStorage`; no `localStorage` | Accept ADR-0006 or amend | Security + product |
 | OQ-AUTH-005 | Documented in Proposed ADR-0006 | trim + lowercase; 3–64; `[a-z0-9._@-]+` | Accept ADR-0006 or amend | Product + architecture |
 | ADR-0006 overall | **Proposed** | Full pilot security defaults listed in ADR | Accept or supersede | Owner/security |
-| `INTERNAL_ERROR` | Documented | HTTP 500 / `INTERNAL_ERROR` | Included in ADR acceptance | Architecture |
+| `AUTH_INTERNAL_ERROR` | Documented | HTTP 500 / `AUTH_INTERNAL_ERROR` | Included in ADR acceptance | Architecture |
 | UUID `user_id` | Documented | UUID | Included in ADR acceptance | Architecture |
 | JWT-key fail mode | Documented | Settings/startup fail-closed when `APP_ENV != local`; no readiness-component change | Included in ADR acceptance | Security + platform |
 
@@ -89,7 +89,7 @@ No critical code-grounding falsehood remains: auth is planned behavior only.
 | JWT claims / TTL / no refresh / no role claim | Pass pending ADR acceptance |
 | Browser storage | Pass |
 | Password + identifier rules | Pass pending ADR acceptance |
-| API endpoints / errors / envelope | Pass (`INTERNAL_ERROR` pinned) |
+| API endpoints / errors / envelope | Pass (`AUTH_INTERNAL_ERROR` pinned) |
 | Health ADR-0005 exception | Pass |
 | Frontend usability-only guards | Pass |
 | Migration from `20260726_0001`; User-only schema | Pass |
@@ -141,3 +141,23 @@ Remediation updated the auth SDD chain, ADR-0006, traceability, and this review 
 ---
 
 **Final verdict: PASS WITH FIXES — Major documentation findings remediated; implementation remains blocked only on explicit ADR-0006 acceptance.**
+
+
+---
+
+## 16. Product-Owner Acceptance (2026-07-26)
+
+This section records a later product-owner acceptance. It does **not** rewrite or invent the earlier independent audit verdict.
+
+| Item | Result |
+|---|---|
+| Earlier independent audit | PASS WITH FIXES (documentation remediation) |
+| OQ-AUTH-001 … OQ-AUTH-005 | **Confirmed** |
+| ADR-0006 | **Accepted** |
+| UUID `user_id` | **Confirmed** |
+| Unexpected 5xx code | **Confirmed** as `AUTH_INTERNAL_ERROR` (HTTP 500) |
+| Slice status | **Approved — Implementation Ready** |
+| Active execution manifest | `docs/00-context/changes/20260726-auth-password-jwt/manifest.yaml` |
+| Freshness-gate before apply | Pass (see change `review.md`) |
+
+Acceptance authorizes implementation preparation and apply under the change package. It is separate from the prior docs-only review.

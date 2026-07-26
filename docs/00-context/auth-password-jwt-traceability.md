@@ -6,8 +6,8 @@
 |---|---|
 | Slice | `auth-password-jwt` |
 | Goal | Establish local identity, JWT access sessions, Admin account lifecycle, and current-role server authorization. |
-| Status | Draft; Major review findings remediated in docs; awaiting owner/security acceptance of proposed ADR-0006 and implementation handoff manifest. |
-| Upstream | Product specification v0.1.5, ADR-0002, ADR-0005, proposed ADR-0006, verified `repo-bootstrap`. |
+| Status | Approved — Implementation Ready; ADR-0006 Accepted; OQ-AUTH-001–005 Confirmed (2026-07-26). |
+| Upstream | Product specification v0.1.5, ADR-0002, ADR-0005, Accepted ADR-0006, verified `repo-bootstrap`. |
 | Downstream | `knowledge-ingest`, `ask-rag`, `chat-providers`, and `audit-minimal`. |
 
 ## SDD Generation Gate Evidence
@@ -17,8 +17,8 @@
 | SDD skill chain used | yes |
 | Entry skill | `.agents/skills/wwa-sdd-generate-all/SKILL.md` (original generation); remediation guided by `review-doc-quality` findings |
 | Downstream skills read during generation/remediation | `req-to-user-story`, `user-story-to-spec`, `spec-to-architecture`, `architecture-to-design`, `design-to-tasks`, `review-doc-quality`, `context-engineering-adr` |
-| ADR created/updated | ADR-0006 proposed and extended to encode OQ-AUTH-001 through OQ-AUTH-005, UUID `user_id`, `INTERNAL_ERROR`, and JWT-key/bootstrap fail-closed semantics; ADR-0002/0005 reused |
-| `review-doc-quality` result | Independent audit was **PASS WITH FIXES**. Remediation of Major findings is recorded in [`docs/reviews/auth-password-jwt-sdd-quality.md`](../reviews/auth-password-jwt-sdd-quality.md). Remains Draft; does **not** approve implementation or mark ADR-0006 Accepted. |
+| ADR created/updated | ADR-0006 **Accepted** (2026-07-26); encodes OQ-AUTH-001–005, UUID `user_id`, `AUTH_INTERNAL_ERROR`, JWT-key/bootstrap fail-closed; ADR-0002/0005 reused |
+| `review-doc-quality` result | Prior independent audit was **PASS WITH FIXES** (docs remediation). Product-owner acceptance recorded 2026-07-26 in [`docs/reviews/auth-password-jwt-sdd-quality.md`](../reviews/auth-password-jwt-sdd-quality.md). Historical review is not re-labeled as this acceptance. |
 
 ## Source → Requirements
 
@@ -102,13 +102,13 @@
 
 - ADR-0002 is reused for stack, phase-one password/JWT auth, roles, and future SSO reservation.
 - ADR-0005 is reused for health-probe authorization exception and readiness component set.
-- ADR-0006 is **Proposed** for pilot auth security defaults. It now encodes OQ-AUTH-001 through OQ-AUTH-005 (password policy + login generic failure, identifier normalization, JWT TTL/claims/no role claim, browser storage, bootstrap fail-closed), plus Argon2id, HS256/`JWT_SIGNING_KEY` settings/startup fail-closed without changing ADR-0005 readiness, mandatory `auth_version`, UUID `user_id`, `INTERNAL_ERROR`, and last-Admin protection. Owner/security acceptance is still required before TASK-AUTH-008 completes. Documented defaults are not approval.
+- ADR-0006 is **Proposed** for pilot auth security defaults. It now encodes OQ-AUTH-001 through OQ-AUTH-005 (password policy + login generic failure, identifier normalization, JWT TTL/claims/no role claim, browser storage, bootstrap fail-closed), plus Argon2id, HS256/`JWT_SIGNING_KEY` settings/startup fail-closed without changing ADR-0005 readiness, mandatory `auth_version`, UUID `user_id`, `AUTH_INTERNAL_ERROR`, and last-Admin protection. Owner/security acceptance is still required before TASK-AUTH-008 completes. Documented defaults are not approval.
 
 ## Handoff Gate
 
 Implementation is not approved by this document set alone. Before a coding session:
 
-1. Accept or amend proposed ADR-0006 (closes OQ-AUTH-001 through OQ-AUTH-005 for handoff).
+1. Accept or amend Accepted ADR-0006 (closes OQ-AUTH-001 through OQ-AUTH-005 for handoff).
 2. Complete TASK-AUTH-001.
 3. Run freshness-gate against the accepted docs, ADRs, and current commit.
 4. Complete TASK-AUTH-008: create and validate a change-package execution manifest.

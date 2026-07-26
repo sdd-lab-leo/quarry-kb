@@ -1,5 +1,11 @@
 # User Stories: Password Authentication and JWT Authorization
 
+## Status
+
+Approved — Implementation Ready
+
+Accepted by product owner on 2026-07-26 with Confirmed OQ-AUTH defaults and Accepted ADR-0006.
+
 ## Actors
 
 - **Admin** — manages accounts and roles and can use all authenticated product capabilities.
@@ -40,7 +46,7 @@ As an active Quarry KB user, I want to log in with my account identifier and pas
 
 ### Open Questions
 
-- Owner/security acceptance of proposed ADR-0006 remains required before implementation handoff (defaults for token lifetime, password policy, bootstrap, and browser storage are already encoded there).
+- None remaining; ADR-0006 Accepted and OQ-AUTH defaults Confirmed on 2026-07-26.
 
 ## Story US-AUTH-002: Manage Accounts And Roles
 
@@ -87,7 +93,7 @@ As an Admin, I want to create, list, activate, deactivate, and assign roles to a
 
 ### Open Questions
 
-- Owner/security acceptance of proposed ADR-0006 remains required before implementation (bootstrap concurrency and fail-closed missing/invalid-env behavior are encoded there).
+- None remaining; ADR-0006 Accepted and OQ-AUTH-002 Confirmed on 2026-07-26.
 
 ## Story US-AUTH-003: Enforce Current Server-Side Authorization
 
