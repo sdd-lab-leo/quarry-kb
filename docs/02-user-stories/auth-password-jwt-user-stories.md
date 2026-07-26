@@ -40,7 +40,7 @@ As an active Quarry KB user, I want to log in with my account identifier and pas
 
 ### Open Questions
 
-- Confirm ADR-0006 / OQ-AUTH defaults for token lifetime, password policy, first-Admin bootstrap, and browser token storage.
+- Owner/security acceptance of proposed ADR-0006 remains required before implementation handoff (defaults for token lifetime, password policy, bootstrap, and browser storage are already encoded there).
 
 ## Story US-AUTH-002: Manage Accounts And Roles
 
@@ -66,6 +66,9 @@ As an Admin, I want to create, list, activate, deactivate, and assign roles to a
 6. **Given** zero Admin accounts exist and valid bootstrap env vars are configured
    **When** one or more application instances start concurrently
    **Then** the serialized bootstrap check creates exactly one active Admin, losing/repeated startups ignore the bootstrap configuration, and no committed default password is used.
+7. **Given** zero Admin accounts exist and required bootstrap env vars are missing or invalid
+   **When** the application starts
+   **Then** no Admin is created and startup fails closed.
 
 ### Notes / Assumptions
 
@@ -84,7 +87,7 @@ As an Admin, I want to create, list, activate, deactivate, and assign roles to a
 
 ### Open Questions
 
-- Confirm ADR-0006 / OQ-AUTH-002 bootstrap env contract, including concurrent-start and missing/invalid-env behavior, before implementation.
+- Owner/security acceptance of proposed ADR-0006 remains required before implementation (bootstrap concurrency and fail-closed missing/invalid-env behavior are encoded there).
 
 ## Story US-AUTH-003: Enforce Current Server-Side Authorization
 

@@ -37,13 +37,14 @@ The server must not echo or log the header value.
 
 | Claim | Required | Purpose |
 |---|---:|---|
-| `sub` | Yes | Internal `user_id`. |
-| `iat` | Yes | Issue time. |
-| `exp` | Yes | Expiry time. |
+| `sub` | Yes | Internal UUID `user_id`. |
+| `iat` | Yes | Issue time (UTC NumericDate). |
+| `exp` | Yes | Expiry time (UTC NumericDate). |
 | `auth_version` | Yes | Mandatory invalidation claim; must match current User row. |
-| `role` | No | Display convenience only; never authorization source of truth. |
 
-Proposed defaults (ADR-0006): 30-minute expiry, HS256 with runtime environment secret `JWT_SIGNING_KEY`, UTC `iat`/`exp` claims, and no refresh token. Pending owner/security acceptance.
+Pilot tokens must **not** include a `role` claim. Current role is always loaded from PostgreSQL.
+
+Proposed defaults (ADR-0006): 30-minute expiry, HS256 with runtime environment secret `JWT_SIGNING_KEY`, UTC `iat`/`exp`, response `expires_at` mirrors `exp` as ISO-8601 UTC, and no refresh token. When `APP_ENV` is not `local`, missing/blank `JWT_SIGNING_KEY` fails closed at settings/startup; this does not change ADR-0005 readiness components. Pending owner/security acceptance.
 
 ## Shared `UserSummary`
 
@@ -63,7 +64,7 @@ All user projections use the same allowlisted shape:
 
 Never include `password_hash`, `external_subject`, `auth_version`, JWT values, or secret settings.
 
-The `<uuid>` values in examples reflect the current proposed internal-ID shape only; the identifier type remains a TASK-AUTH-001 decision and is not an approval.
+The `<uuid>` values in examples reflect the ADR-0006 default internal-ID shape for this slice; owner/security acceptance of ADR-0006 is still required before coding.
 
 ## Error Response Format
 
@@ -89,8 +90,9 @@ The `<uuid>` values in examples reflect the current proposed internal-ID shape o
 | `LAST_ADMIN_REQUIRED` | 409 | Operation would deactivate or demote the last active Admin. |
 | `VALIDATION_ERROR` | 422 | Request field validation failed. |
 | `USER_NOT_FOUND` | 404 | Admin target does not exist. |
+| `INTERNAL_ERROR` | 500 | Unexpected server/dependency failure; safe message only. |
 
-FastAPI request-validation failures and authentication-dependency failures must be normalized into this same P0 envelope. Unexpected server/dependency failures use a safe 5xx envelope; the stable 5xx code and operator-facing message must be pinned before implementation and must not expose raw exception details.
+FastAPI request-validation failures and authentication-dependency failures must be normalized into this same P0 envelope. Unexpected server/dependency failures use HTTP 500 with `INTERNAL_ERROR` and a safe operator-facing message; they must not expose raw exception details.
 
 ## API Endpoints Summary
 
@@ -143,8 +145,8 @@ Success response, HTTP 200:
 
 Validation/error cases:
 
-- `422 VALIDATION_ERROR` for missing/empty request fields or identifier rule failures.
-- For structurally valid non-empty credentials, unknown identifier, wrong password, and inactive account all return `401 AUTHENTICATION_FAILED` with the same safe category. Whether login should separately reject policy-invalid password values remains OQ-AUTH-001; new-account/bootstrap policy validation is distinct.
+- `422 VALIDATION_ERROR` for missing/empty request fields or identifier rule failures (trim + lowercase; length 3–64; `[a-z0-9._@-]+`).
+- For structurally valid non-empty credentials, unknown identifier, wrong password, inactive account, and passwords that would fail the create/bootstrap policy all return `401 AUTHENTICATION_FAILED` with the same safe category. New-account/bootstrap policy validation remains distinct (`422`).
 - Never return password hash, raw password, `auth_version`, or token diagnostics.
 
 ### Current user
@@ -244,13 +246,13 @@ Runtime env vars (never committed with real secrets):
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER` | Yes when bootstrapping | First Admin identifier |
-| `AUTH_BOOTSTRAP_ADMIN_PASSWORD` | Yes when bootstrapping | First Admin password |
-| `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME` | No | Display name; default derived from identifier |
+| `AUTH_BOOTSTRAP_ADMIN_IDENTIFIER` | Yes when bootstrapping | First Admin identifier (normalized per ADR-0006) |
+| `AUTH_BOOTSTRAP_ADMIN_PASSWORD` | Yes when bootstrapping | First Admin password (create/bootstrap policy) |
+| `AUTH_BOOTSTRAP_ADMIN_DISPLAY_NAME` | No | Display name; default = normalized identifier |
 
-Bootstrap runs only when zero Admin accounts exist and creates exactly one active Admin.
+Bootstrap runs only when zero Admin accounts exist (any status) and creates exactly one active Admin.
 
-The zero-Admin check and create must be serialized transactionally. Concurrent starts have one winner; losing and repeated starts observe an existing Admin and ignore the bootstrap variables. If required bootstrap variables are missing or invalid, the recommended default is to create no Admin and fail closed; this behavior remains pending OQ-AUTH-002 confirmation.
+The zero-Admin check and create must be serialized transactionally. Concurrent starts have one winner; losing and repeated starts observe an existing Admin and ignore the bootstrap variables. If required bootstrap variables are missing or invalid while zero Admins exist, create no Admin and fail closed at startup (ADR-0006).
 
 ## Concurrency
 

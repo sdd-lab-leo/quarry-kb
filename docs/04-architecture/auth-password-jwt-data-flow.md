@@ -38,7 +38,7 @@ Browser session state (memory + sessionStorage)
 | Account identifier | User lookup key | Normalize according to approved identifier rule. |
 | Password | Password adapter only | Never persist, log, or include in response. |
 | User ID | JWT subject and current-user summary | Internal ID; not an external provider subject. |
-| Current role | Safe profile and authorization lookup | Current DB value is authoritative. |
+| Current role | Safe profile and authorization lookup | Current DB value is authoritative; not placed in JWT claims for the pilot. |
 | `auth_version` | JWT claim only | Never returned in UserSummary. |
 | JWT | Browser session state | Never write to logs, `localStorage`, or render as UI content. |
 
@@ -62,7 +62,7 @@ Current role authorization
 Future business use case
 ```
 
-The role claim, if present for display convenience, is not used as the authorization source of truth. A role update is therefore visible on the next protected request. `auth_version` comparison is mandatory on every protected request.
+Pilot tokens do not include a `role` claim. A role update is therefore visible on the next protected request because authorization loads the current database role. `auth_version` comparison is mandatory on every protected request.
 
 ## Flow 3: Admin Account Lifecycle
 
@@ -97,14 +97,15 @@ Serialize bootstrap transaction and count any Admin accounts
         │ zero Admins
         ▼
 Read AUTH_BOOTSTRAP_ADMIN_* env vars
-  missing/invalid ──► create no Admin; safe startup failure behavior remains pending OQ-AUTH-002
+  missing/invalid ──► create no Admin; fail closed at startup
         ▼
 Create exactly one active Admin with Argon2id hash
+  (optional display name defaults to normalized identifier)
         ▼
 Later startups skip bootstrap
 ```
 
-The serialized check/create is required so concurrent application starts have one winner; all losing starts re-read the committed state and skip creation. The recommended safe default for missing or invalid required bootstrap values is fail-closed startup, pending owner/security confirmation.
+The serialized check/create is required so concurrent application starts have one winner; all losing starts re-read the committed state and skip creation. Missing or invalid required bootstrap values when zero Admins exist fail closed at startup (ADR-0006). This does not add a JWT/bootstrap component to ADR-0005 readiness probes.
 
 ## Flow 5: Frontend Session Lifecycle
 
